@@ -1,0 +1,40 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>netstandard1.3</TargetFramework>
+        <IncludeBuildOutput>false</IncludeBuildOutput>
+        <IncludeSymbols>false</IncludeSymbols>
+        <IsPackable>true</IsPackable>
+        <Product>Clean Code Developer Analyzers</Product>
+        <AssemblyVersion>0.0.3</AssemblyVersion>
+        <FileVersion>0.0.3</FileVersion>
+        <Title>Clean Code Developer Analyzers</Title>
+        <PackageProjectUrl>https://lieser-online.de</PackageProjectUrl>
+        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+        <NeutralLanguage>en-001</NeutralLanguage>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <PackageId>CleanCodeDeveloper.Analyzers</PackageId>
+        <PackageVersion>0.0.3</PackageVersion>
+        <Authors>Stefan Lieser</Authors>
+        <RepositoryUrl>https://github.com/slieser</RepositoryUrl>
+        <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+        <Description>Roslyn Analyzers for Clean Code Developer Principles</Description>
+        <PackageReleaseNotes>Integration Operation Segregation Principle (IOSP) is verified for methods</PackageReleaseNotes>
+        <Copyright>Copyright Stefan Lieser</Copyright>
+        <PackageTags>analyzers, clean code, IOSP, principles</PackageTags>
+        <NoPackageAnalysis>true</NoPackageAnalysis>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="2.9" PrivateAssets="all" />
+        <PackageReference Update="NETStandard.Library" PrivateAssets="all" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <None Update="tools\*.ps1" CopyToOutputDirectory="Always" Pack="true" PackagePath="" />
+        <None Include="$(OutputPath)\$(AssemblyName).dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+    </ItemGroup>
+</Project>
