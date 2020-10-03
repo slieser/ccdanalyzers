@@ -53,7 +53,6 @@ namespace CleanCodeDeveloper.Analyzers.Tests
             await Verify.VerifyAnalyzerAsync(test, expected);
         }
         
-        
         [Fact]
         public async Task Not_allowed_Integration_with_if_statement_containing_an_expression() {
             const string test = 

@@ -18,7 +18,7 @@ namespace CleanCodeDeveloper.Analyzers
 
         private static readonly DiagnosticDescriptor Rule =
             new DiagnosticDescriptor(
-                "CCD001",
+                "CCD0001",
                 Title,
                 MessageFormat,
                 "Clean Code Developer Principles",
