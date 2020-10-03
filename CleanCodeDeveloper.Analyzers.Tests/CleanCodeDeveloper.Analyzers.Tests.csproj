@@ -13,7 +13,7 @@
         <PackageReference Include="Microsoft.CodeAnalysis.Testing.Verifiers.XUnit" Version="1.0.1-beta1.20472.1" />
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.4.0" />
         <PackageReference Include="xunit" Version="2.4.1" />
-        <Analyzer Include="../CleanCodeDeveloper.Analyzers/bin/Debug/netstandard1.3/CleanCodeDeveloper.Analyzers.dll" />
+        <Analyzer Include="../CleanCodeDeveloper.Analyzers/bin/Debug/netstandard2.0/CleanCodeDeveloper.Analyzers.dll" />
     </ItemGroup>
 
     <ItemGroup>
