@@ -68,7 +68,7 @@ namespace CleanCodeDeveloper.Analyzers
                 }
             }
 
-            var expressions = FindAll(block, false, node => node is BinaryExpressionSyntax);
+            var expressions = FindAll(block, false, node => node is BinaryExpressionSyntax && !(node.Parent is ForStatementSyntax));
             if (expressions.Any()) {
                 isOperation = true;
                 operation += string.Join("\n", expressions.Select(e => $"  Operation: expression '{e}'")) + "\n";

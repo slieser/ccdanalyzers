@@ -225,7 +225,7 @@ class A
         }
 
         [Fact]
-        public async Task Allowed_Canonical_for_loop_in_integration() {
+        public async Task Allowed_for_loop_in_integration() {
             const string test = 
 @"using System.Collections.Generic;    
 class A
@@ -241,6 +241,26 @@ class A
 }";
             DiagnosticResult[] expected = {
             };
+            await Verify.VerifyAnalyzerAsync(test, expected);
+        }
+
+        [Fact]
+        public async Task Not_allowed_expression_in_for_loop_block_in_integration() {
+            const string test = 
+@"using System.Collections.Generic;    
+class A
+{
+    public void Integration() {
+        for(var i = 0; i < 10; i++) {
+            Operation(i + 1);
+        }
+    }
+
+    public void Operation(int x) {
+    }
+}";
+            DiagnosticResult[] expected = {
+                Verify.Diagnostic().WithSpan(4, 17, 4, 28).WithArguments("Integration", "  Integration: call to 'Operation'\n", "  Operation: expression 'i + 1'\n")            };
             await Verify.VerifyAnalyzerAsync(test, expected);
         }
     }
