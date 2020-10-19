@@ -2,10 +2,15 @@ using System;
 
 internal class A
 {
-    public void Integration() {
+    public void Integration1() {
         Operation1();
         Operation2();
         var s = 42.ToString();
+    }
+
+    public void Integration2() {
+        Operation3(1 + 1);
+        Operation3(1 + 1);
     }
 
     public void Operation1() {
@@ -21,7 +26,7 @@ internal class A
         Console.WriteLine(42);
     }
 
-    public void Integration2() {
+    public void Integration3() {
         for (var i = 0; i < 10; i++) {
             Operation3(i);
         }

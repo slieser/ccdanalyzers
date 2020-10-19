@@ -14,7 +14,7 @@ namespace CleanCodeDeveloper.Analyzers
     {
         private const string Title = "IOSP violation";
         private const string MessageFormat = "Method '{0}' mixes integration with operation.\n{1}{2}";
-        private const string Description = "Extract operational code into method and call it here";
+        private const string Description = "Integration Operation Segregation Principle (IOSP) is violated";
 
         private static readonly DiagnosticDescriptor Rule =
             new DiagnosticDescriptor(
@@ -39,10 +39,9 @@ namespace CleanCodeDeveloper.Analyzers
                 return;
             }
 
-            var isOperation = false;
-            var operation = "";
-            var isIntegration = false;
-            var integration = "";
+            var operations = new List<string>();
+            var expressions = new List<string>();
+            var integrations = new List<string>();
             
             var method = (IMethodSymbol) codeBlockAnalysisContext.OwningSymbol;
             var block = (BlockSyntax) codeBlockAnalysisContext.CodeBlock.ChildNodes().FirstOrDefault(n => n.Kind() == SyntaxKind.Block);
@@ -59,29 +58,53 @@ namespace CleanCodeDeveloper.Analyzers
                     
                 if(methodSymbol == null) continue;
                 if (methodSymbol.DeclaringSyntaxReferences.Length > 0) {
-                    isIntegration = true;
-                    integration += $"  Integration: call to '{methodSymbol.Name}'\n";
+                    if (!integrations.Contains(methodSymbol.Name)) {
+                        integrations.Add(methodSymbol.Name);
+                    }
                 }
                 else {
-                    isOperation = true;
-                    operation += $"  Operation: calling API '{methodSymbol.Name}'\n";
+                    if (!operations.Contains(methodSymbol.Name)) {
+                        operations.Add(methodSymbol.Name);
+                    }
                 }
             }
 
-            var expressions = FindAll(block, false, node => node is BinaryExpressionSyntax && !(node.Parent is ForStatementSyntax));
-            if (expressions.Any()) {
-                isOperation = true;
-                operation += string.Join("\n", expressions.Select(e => $"  Operation: expression '{e}'")) + "\n";
+            var expressionSymbols = FindAll(block, false, node => node is BinaryExpressionSyntax && !(node.Parent is ForStatementSyntax));
+            foreach (var e in expressionSymbols) {
+                if (!expressions.Contains(e.ToString())) {
+                    expressions.Add(e.ToString());
+                }
             }
 
-            if (!(isOperation && isIntegration)) {
+            if (!((operations.Any() || expressions.Any()) && integrations.Any())) {
                 return;
             }
                 
             var tree = block.SyntaxTree;
             var location = method.Locations.First(l => tree.Equals(l.SourceTree));
-            var diagnostic = Diagnostic.Create(Rule, location, method.Name, integration, operation);
+            var integrationMessage = FormatIntegrations(integrations);
+            var operationMessage = FormatOperations(operations, expressions);
+            var diagnostic = Diagnostic.Create(Rule, location, method.Name, integrationMessage, operationMessage);
             codeBlockAnalysisContext.ReportDiagnostic(diagnostic);
+        }
+
+        private static string FormatIntegrations(List<string> integrations) {
+            var result = "";
+            foreach (var integration in integrations) {
+                result += $"  Integration: call to '{integration}'\n";
+            }
+            return result;
+        }
+
+        private static string FormatOperations(List<string> operations, List<string> expressions) {
+            var result = "";
+            foreach (var operation in operations) {
+                result += $"  Operation: calling API '{operation}'\n";
+            }
+            foreach (var expression in expressions) {
+                result += $"  Operation: expression '{expression}'\n";
+            }
+            return result;
         }
 
         private static IEnumerable<SyntaxNode> FindAll(SyntaxNode block, bool recursive, Func<SyntaxNode, bool> predicate) {

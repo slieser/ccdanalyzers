@@ -225,7 +225,7 @@ class A
         }
 
         [Fact]
-        public async Task Allowed_for_loop_in_integration() {
+        public async Task Allowed_for_loop_with_expression_in_integration() {
             const string test = 
 @"using System.Collections.Generic;    
 class A
@@ -260,7 +260,50 @@ class A
     }
 }";
             DiagnosticResult[] expected = {
-                Verify.Diagnostic().WithSpan(4, 17, 4, 28).WithArguments("Integration", "  Integration: call to 'Operation'\n", "  Operation: expression 'i + 1'\n")            };
+                Verify.Diagnostic().WithSpan(4, 17, 4, 28).WithArguments("Integration", "  Integration: call to 'Operation'\n", "  Operation: expression 'i + 1'\n")
+            };
+            await Verify.VerifyAnalyzerAsync(test, expected);
+        }
+
+        [Fact]
+        public async Task Multiple_integration_calls_are_listed_only_once_in_message() {
+            const string test = 
+@"using System.Collections.Generic;    
+class A
+{
+    public void Integration() {
+         var i = 2;
+         Operation(i + 1);
+         Operation(i + 2);
+    }
+
+    public void Operation(int x) {
+    }
+}";
+            DiagnosticResult[] expected = {
+                Verify.Diagnostic().WithSpan(4, 17, 4, 28).WithArguments("Integration", "  Integration: call to 'Operation'\n", "  Operation: expression 'i + 1'\n  Operation: expression 'i + 2'\n")
+            };
+            await Verify.VerifyAnalyzerAsync(test, expected);
+        }
+
+        [Fact]
+        public async Task Multiple_expressoions_are_listed_only_once_in_message() {
+            const string test = 
+@"using System.Collections.Generic;    
+class A
+{
+    public void Integration() {
+         var i = 2;
+         Operation(i + 1);
+         Operation(i + 1);
+    }
+
+    public void Operation(int x) {
+    }
+}";
+            DiagnosticResult[] expected = {
+                Verify.Diagnostic().WithSpan(4, 17, 4, 28).WithArguments("Integration", "  Integration: call to 'Operation'\n", "  Operation: expression 'i + 1'\n")
+            };
             await Verify.VerifyAnalyzerAsync(test, expected);
         }
     }
