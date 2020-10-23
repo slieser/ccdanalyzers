@@ -227,8 +227,7 @@ class A
         [Fact]
         public async Task Allowed_for_loop_with_expression_in_integration() {
             const string test = 
-@"using System.Collections.Generic;    
-class A
+@"class A
 {
     public void Integration() {
         for(var i = 0; i < 10; i++) {
@@ -237,6 +236,51 @@ class A
     }
 
     public void Operation(int x) {
+    }
+}";
+            DiagnosticResult[] expected = {
+            };
+            await Verify.VerifyAnalyzerAsync(test, expected);
+        }
+
+        [Fact]
+        public async Task Allowed_try_catch_in_integration() {
+            const string test = 
+@"class A
+{
+   public void Integration() {
+        try {
+            Operation();
+        }
+        catch {
+            Operation();            
+        }     
+    }
+    public void Operation() {
+    }
+}";
+            DiagnosticResult[] expected = {
+            };
+            await Verify.VerifyAnalyzerAsync(test, expected);
+        }
+
+        [Fact]
+        public async Task Allowed_try_catch_with_exception_in_integration() {
+            const string test = 
+@"using System;
+class A
+{
+    public void Integration5() {
+        try {
+            Operation();
+        }
+        catch (Exception e) {
+            Operation4(e.Message);            
+        }     
+    }
+    public void Operation() {
+    }
+    private void Operation4(string exception) {
     }
 }";
             DiagnosticResult[] expected = {

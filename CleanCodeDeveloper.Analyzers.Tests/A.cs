@@ -34,4 +34,25 @@ internal class A
 
     private void Operation3(int i) {
     }
+
+    public void Integration4() {
+        try {
+            Operation1();
+        }
+        catch {
+            Operation2();            
+        }     
+    }
+
+    public void Integration5() {
+        try {
+            Operation1();
+        }
+        catch (Exception e) {
+            Operation4(e.Message);            
+        }     
+    }
+
+    private void Operation4(string exception) {
+    }
 }
