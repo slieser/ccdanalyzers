@@ -346,8 +346,7 @@ class A
         [Fact]
         public async Task Not_allowed_expression_in_for_loop_block_in_integration() {
             const string test = 
-@"using System.Collections.Generic;    
-class A
+@"class A
 {
     public void Integration() {
         for(var i = 0; i < 10; i++) {
@@ -359,7 +358,47 @@ class A
     }
 }";
             DiagnosticResult[] expected = {
-                Verify.Diagnostic().WithSpan(4, 17, 4, 28).WithArguments("Integration", "  Integration: call to 'Operation'\n", "  Operation: expression 'i + 1'\n")
+                Verify.Diagnostic().WithSpan(3, 17, 3, 28).WithArguments("Integration", "  Integration: call to 'Operation'\n", "  Operation: expression 'i + 1'\n")
+            };
+            await Verify.VerifyAnalyzerAsync(test, expected);
+        }
+
+        [Fact]
+        public async Task Allowed_local_method_call_in_integration() {
+            const string test = 
+@"class A
+{
+    public void Integration() {
+        void LocalOperation() {
+        }
+        Operation();
+    }
+
+    public void Operation() {
+    }
+}";
+            DiagnosticResult[] expected = {
+            };
+            await Verify.VerifyAnalyzerAsync(test, expected);
+        }
+
+        [Fact]
+        public async Task Not_allowed_local_method_call__with_expression_in_integration() {
+            const string test = 
+@"class A
+{
+    public void Integration() {
+        void LocalOperation() {
+            var x = 4 + 2;
+        }
+        Operation();
+    }
+
+    public void Operation() {
+    }
+}";
+            DiagnosticResult[] expected = {
+                Verify.Diagnostic().WithSpan(3, 17, 3, 28).WithArguments("Integration", "  Integration: call to 'Operation'\n", "  Operation: expression '4 + 2'\n")
             };
             await Verify.VerifyAnalyzerAsync(test, expected);
         }
@@ -386,7 +425,7 @@ class A
         }
 
         [Fact]
-        public async Task Multiple_expressoions_are_listed_only_once_in_message() {
+        public async Task Multiple_expressions_are_listed_only_once_in_message() {
             const string test = 
 @"using System.Collections.Generic;    
 class A
