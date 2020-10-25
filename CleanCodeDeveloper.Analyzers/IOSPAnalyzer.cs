@@ -63,6 +63,9 @@ namespace CleanCodeDeveloper.Analyzers
                     }
                 }
                 else {
+                    if (methodSymbol.MethodKind is MethodKind.DelegateInvoke) {
+                        continue;
+                    }
                     if (!operations.Contains(methodSymbol.Name)) {
                         operations.Add(methodSymbol.Name);
                     }

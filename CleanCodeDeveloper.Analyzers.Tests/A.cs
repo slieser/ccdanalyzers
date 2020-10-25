@@ -29,6 +29,7 @@ internal class A
     public void Integration3() {
         for (var i = 0; i < 10; i++) {
             Operation3(i);
+            throw new Exception();
         }
     }
 
@@ -54,5 +55,19 @@ internal class A
     }
 
     private void Operation4(string exception) {
+    }
+
+    public void Operation() {
+        void OperationIntern() {
+            var x = 3 + 5;          // Expression => Operation
+        } 
+        
+        Console.WriteLine();        // API Call => Operation
+        OperationIntern();          // Local Method Call => Integration
+    }
+
+    public void Integration6(Action action) {
+        Operation1();
+        action();       // should be Integration!
     }
 }

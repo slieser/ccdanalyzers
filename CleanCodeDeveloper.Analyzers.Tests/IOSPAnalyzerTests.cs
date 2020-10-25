@@ -289,6 +289,61 @@ class A
         }
 
         [Fact]
+        public async Task Allowed_throwing_exceptions_in_integration() {
+            const string test = 
+@"using System;
+class A
+{
+    public void Integration() {
+        Operation();
+        throw new Exception(""boom"");
+    }
+    public void Operation() {
+    }
+}";
+            DiagnosticResult[] expected = {
+            };
+            await Verify.VerifyAnalyzerAsync(test, expected);
+        }
+
+        [Fact]
+        public async Task Allowed_calling_actions_in_integration() {
+            const string test = 
+@"using System;
+class A
+{
+    public void Integration6(Action action) {
+        Operation();
+        action();
+    }
+    public void Operation() {
+    }
+}";
+            DiagnosticResult[] expected = {
+            };
+            await Verify.VerifyAnalyzerAsync(test, expected);
+        }
+
+        [Fact]
+        public async Task Not_allowed_mixing_own_Invoke_with_API_call_in_integration() {
+            const string test = 
+@"using System;
+class A
+{
+    public void Integration() {
+        Invoke();
+        Console.WriteLine();
+    }
+    public void Invoke() {
+    }
+}";
+            DiagnosticResult[] expected = {
+                Verify.Diagnostic().WithSpan(4, 17, 4, 28).WithArguments("Integration", "  Integration: call to 'Invoke'\n", "  Operation: calling API 'WriteLine'\n")
+            };
+            await Verify.VerifyAnalyzerAsync(test, expected);
+        }
+
+        [Fact]
         public async Task Not_allowed_expression_in_for_loop_block_in_integration() {
             const string test = 
 @"using System.Collections.Generic;    
