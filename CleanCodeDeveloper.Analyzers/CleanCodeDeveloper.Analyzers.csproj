@@ -12,19 +12,20 @@
         <NeutralLanguage>en-001</NeutralLanguage>
         <LangVersion>default</LangVersion>
         <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
+        <PackageIcon>Mini Logo.jpg</PackageIcon>
     </PropertyGroup>
 
     <PropertyGroup>
         <PackageId>CleanCodeDeveloper.Analyzers</PackageId>
-        <PackageVersion>0.0.5</PackageVersion>
-        <Authors>Stefan Lieser</Authors>
+        <PackageVersion>0.1.0</PackageVersion>
+        <Authors>Stefan Lieser - CCD Akademie GmbH</Authors>
         <RepositoryUrl>https://github.com/slieser/ccdanalyzers</RepositoryUrl>
         <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
-        <PackageProjectUrl>https://github.com/slieser/ccdanalyzers</PackageProjectUrl>
+        <PackageProjectUrl>https://ccd-akademie.de/iosp-analyzer</PackageProjectUrl>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
         <Description>Roslyn Analyzers for Clean Code Developer Principles</Description>
         <PackageReleaseNotes>Integration Operation Segregation Principle (IOSP) is verified for methods</PackageReleaseNotes>
-        <Copyright>Copyright Stefan Lieser</Copyright>
+        <Copyright>Copyright Stefan Lieser - CCD Akademie GmbH</Copyright>
         <PackageTags>analyzers, cleancode, IOSP, principles</PackageTags>
         <NoPackageAnalysis>true</NoPackageAnalysis>
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
@@ -38,6 +39,10 @@
     <ItemGroup>
         <None Update="tools\*.ps1" CopyToOutputDirectory="Always" Pack="true" PackagePath="" />
         <None Include="$(OutputPath)\$(AssemblyName).dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+        <None Update="Mini Logo.jpg">
+          <Pack>True</Pack>
+          <PackagePath></PackagePath>
+        </None>
     </ItemGroup>
 
     <ItemGroup>
