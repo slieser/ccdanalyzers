@@ -13,10 +13,10 @@ namespace CleanCodeDeveloper.Analyzers
     public class IOSPAnalyzer : DiagnosticAnalyzer
     {
         private const string Title = "IOSP violation";
-        private const string MessageFormat = "Method '{0}' mixes integration with operation.\n{1}{2}";
-        private const string Description = "Integration Operation Segregation Principle (IOSP) is violated";
+        private const string MessageFormat = "Method '{0}' mixes integration with operation. - {1}{2}.";
+        private const string Description = "Integration Operation Segregation Principle (IOSP) is violated.";
 
-        private static readonly DiagnosticDescriptor Rule =
+        private readonly static DiagnosticDescriptor Rule =
             new DiagnosticDescriptor(
                 "CCD0001",
                 Title,
@@ -26,7 +26,7 @@ namespace CleanCodeDeveloper.Analyzers
                 true,
                 Description);
 
-        public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
+        public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [Rule];
 
         public override void Initialize(AnalysisContext context) {
             context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
@@ -44,7 +44,7 @@ namespace CleanCodeDeveloper.Analyzers
             var integrations = new List<string>();
             
             var method = (IMethodSymbol) codeBlockAnalysisContext.OwningSymbol;
-            var block = (BlockSyntax) codeBlockAnalysisContext.CodeBlock.ChildNodes().FirstOrDefault(n => n.Kind() == SyntaxKind.Block);
+            var block = (BlockSyntax) codeBlockAnalysisContext.CodeBlock.ChildNodes().FirstOrDefault(n => n.IsKind(SyntaxKind.Block));
             if (block == null || block.Statements.Count <= 0) {
                 return;
             }
@@ -113,7 +113,7 @@ namespace CleanCodeDeveloper.Analyzers
         private static IEnumerable<SyntaxNode> FindAll(SyntaxNode block, bool recursive, Func<SyntaxNode, bool> predicate) {
             var result = new List<SyntaxNode>();
 
-            var nodes = block.ChildNodes().Where(predicate);
+            var nodes = block.ChildNodes().Where(predicate).ToList();
             result.AddRange(nodes);
             if (nodes.Any() && !recursive) {
                 return result;
