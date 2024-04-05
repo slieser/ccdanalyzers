@@ -55,8 +55,10 @@ namespace CleanCodeDeveloper.Analyzers
                     .SemanticModel
                     .GetSymbolInfo(invocation, codeBlockAnalysisContext.CancellationToken)
                     .Symbol as IMethodSymbol;
-                    
-                if(methodSymbol == null) continue;
+
+                if (methodSymbol == null) {
+                    continue;
+                }
                 if (methodSymbol.DeclaringSyntaxReferences.Length > 0) {
                     if (!integrations.Contains(methodSymbol.Name)) {
                         integrations.Add(methodSymbol.Name);
@@ -64,6 +66,10 @@ namespace CleanCodeDeveloper.Analyzers
                 }
                 else {
                     if (methodSymbol.MethodKind is MethodKind.DelegateInvoke) {
+                        continue;
+                    }
+                    if (string.Equals(methodSymbol.Name, "ConfigureAwait") && string.Equals(methodSymbol.ContainingNamespace.Name, "Tasks")) {
+                        // Skip ConfigureAwait calls as this is the only way to configure where an Awaiter can run.
                         continue;
                     }
                     if (!operations.Contains(methodSymbol.Name)) {
