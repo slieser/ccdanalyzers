@@ -33,11 +33,11 @@
     </PropertyGroup>
 
     <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
-      <OutputPath>bin/Debug/net8.0/</OutputPath>
+      <OutputPath>bin/Debug/</OutputPath>
     </PropertyGroup>
 
     <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
-      <OutputPath>bin/Release/net8.0/</OutputPath>
+      <OutputPath>bin/Release/</OutputPath>
     </PropertyGroup>
 
     <ItemGroup>
