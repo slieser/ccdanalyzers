@@ -6,18 +6,19 @@
         <IncludeSymbols>false</IncludeSymbols>
         <IsPackable>true</IsPackable>
         <Product>Clean Code Developer Analyzers</Product>
-        <AssemblyVersion>0.0.5</AssemblyVersion>
-        <FileVersion>0.0.5</FileVersion>
+        <AssemblyVersion>0.1.1</AssemblyVersion>
+        <FileVersion>0.1.1</FileVersion>
         <Title>Clean Code Developer Analyzers</Title>
         <NeutralLanguage>en-001</NeutralLanguage>
         <LangVersion>default</LangVersion>
         <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
         <PackageIcon>Mini Logo.jpg</PackageIcon>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
     </PropertyGroup>
 
     <PropertyGroup>
         <PackageId>CleanCodeDeveloper.Analyzers</PackageId>
-        <PackageVersion>0.1.0</PackageVersion>
+        <PackageVersion>0.1.1</PackageVersion>
         <Authors>Stefan Lieser - CCD Akademie GmbH</Authors>
         <RepositoryUrl>https://github.com/slieser/ccdanalyzers</RepositoryUrl>
         <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
@@ -31,22 +32,32 @@
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
     </PropertyGroup>
 
+    <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+      <OutputPath>bin/Debug/net8.0/</OutputPath>
+    </PropertyGroup>
+
+    <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+      <OutputPath>bin/Release/net8.0/</OutputPath>
+    </PropertyGroup>
+
     <ItemGroup>
         <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.9.2" PrivateAssets="all" />
-        <PackageReference Update="NETStandard.Library" PrivateAssets="all" />
     </ItemGroup>
 
     <ItemGroup>
         <None Update="tools\*.ps1" CopyToOutputDirectory="Always" Pack="true" PackagePath="" />
         <None Include="$(OutputPath)\$(AssemblyName).dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
-        <None Update="Mini Logo.jpg">
-          <Pack>True</Pack>
-          <PackagePath></PackagePath>
-        </None>
+        <None Update="Mini Logo.jpg" Pack="true" PackagePath="\"/>
     </ItemGroup>
 
     <ItemGroup>
       <AdditionalFiles Include="AnalyzerReleases.Shipped.md" />
       <AdditionalFiles Include="AnalyzerReleases.Unshipped.md" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Include="..\README.md" Pack="true" PackagePath="\">
+        <Link>README.md</Link>
+      </None>
     </ItemGroup>
 </Project>

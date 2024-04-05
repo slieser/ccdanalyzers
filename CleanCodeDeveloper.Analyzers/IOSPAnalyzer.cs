@@ -13,7 +13,7 @@ namespace CleanCodeDeveloper.Analyzers
     public class IOSPAnalyzer : DiagnosticAnalyzer
     {
         private const string Title = "IOSP violation";
-        private const string MessageFormat = "Method '{0}' mixes integration with operation. - {1}{2}.";
+        private const string MessageFormat = "Method '{0}' mixes integration with operation.\n{1}{2}";
         private const string Description = "Integration Operation Segregation Principle (IOSP) is violated.";
 
         private readonly static DiagnosticDescriptor Rule =
@@ -94,7 +94,7 @@ namespace CleanCodeDeveloper.Analyzers
         private static string FormatIntegrations(List<string> integrations) {
             var result = "";
             foreach (var integration in integrations) {
-                result += $"  Integration: call to '{integration}'\n";
+                result += $"- Integration: call to '{integration}'\n";
             }
             return result;
         }
@@ -102,10 +102,10 @@ namespace CleanCodeDeveloper.Analyzers
         private static string FormatOperations(List<string> operations, List<string> expressions) {
             var result = "";
             foreach (var operation in operations) {
-                result += $"  Operation: calling API '{operation}'\n";
+                result += $"- Operation: calling API '{operation}'\n";
             }
             foreach (var expression in expressions) {
-                result += $"  Operation: expression '{expression}'\n";
+                result += $"- Operation: expression '{expression}'\n";
             }
             return result;
         }
