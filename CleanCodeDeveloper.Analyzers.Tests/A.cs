@@ -71,8 +71,35 @@ internal class A
         action();       // should be Integration!
     }
 
-    public void Operation5(Action<int> action) {
+    public void Operation6(Func<int> func) {
+        var i = 42 + func();
+    }
+    
+    public delegate void MyDelegate();
+    
+    public void Integration7(MyDelegate myDelegate) {
+        Operation1();
+        myDelegate();
+    }
+    
+    public void Operation7() {
+        var myDelegate = new MyDelegate(Operation1);
+        myDelegate();
         var i = 42 + 1;
-        action(i);
+    }
+
+    public class HasEvent
+    {
+        public event Action MyEvent;
+
+        public void Fire() {
+            MyEvent?.Invoke();
+        }
+    }
+    
+    public void Integration8(HasEvent hasEvent) {
+        Operation1();
+        hasEvent.MyEvent += Operation1;
+        hasEvent.Fire();
     }
 }

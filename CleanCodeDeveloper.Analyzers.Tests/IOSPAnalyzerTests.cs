@@ -353,6 +353,26 @@ namespace CleanCodeDeveloper.Analyzers.Tests
         }
 
         [Fact]
+        public async Task Allowed_calling_func_in_integration() {
+            const string test =
+                """
+                using System;
+                class A
+                {
+                    public void Integration(Func<string> func) {
+                        Operation();
+                        func();
+                    }
+                    public void Operation() {
+                    }
+                }
+                """;
+            DiagnosticResult[] expected = {
+            };
+            await Verify.VerifyAnalyzerAsync(test, expected);
+        }
+
+        [Fact]
         public async Task Not_allowed_calling_actions_in_operation() {
             const string test =
                 """
