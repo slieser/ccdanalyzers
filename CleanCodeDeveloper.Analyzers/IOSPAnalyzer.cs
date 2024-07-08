@@ -64,10 +64,14 @@ namespace CleanCodeDeveloper.Analyzers
                         integrations.Add(methodSymbol.Name);
                     }
                 }
-                else {
-                    if (methodSymbol.MethodKind is MethodKind.DelegateInvoke) {
-                        continue;
+                else if (methodSymbol.MethodKind is MethodKind.DelegateInvoke && (
+                         methodSymbol.ContainingType.ToDisplayString().StartsWith("System.Action") ||
+                         methodSymbol.ContainingType.ToDisplayString().StartsWith("System.Func"))) {
+                    if (!integrations.Contains(methodSymbol.Name)) {
+                        integrations.Add(methodSymbol.Name);
                     }
+                }
+                else {
                     if (string.Equals(methodSymbol.Name, "ConfigureAwait") && string.Equals(methodSymbol.ContainingNamespace.Name, "Tasks")) {
                         // Skip ConfigureAwait calls as this is the only way to configure where an Awaiter can run.
                         continue;

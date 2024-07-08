@@ -70,4 +70,9 @@ internal class A
         Operation1();
         action();       // should be Integration!
     }
+
+    public void Operation5(Action<int> action) {
+        var i = 42 + 1;
+        action(i);
+    }
 }

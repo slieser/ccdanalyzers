@@ -353,6 +353,48 @@ namespace CleanCodeDeveloper.Analyzers.Tests
         }
 
         [Fact]
+        public async Task Not_allowed_calling_actions_in_operation() {
+            const string test =
+                """
+                using System;
+                class A
+                {
+                    public void Operation5(Action action) {
+                        Console.WriteLine();
+                        action();
+                    }
+                    public void Operation6(Action<string> action) {
+                        Console.WriteLine();
+                        action("Hi");
+                    }
+                }
+                """;
+            DiagnosticResult[] expected = {
+                Verify.Diagnostic().WithSpan(4, 17, 4, 27).WithArguments("Operation5", "- Integration: call to 'Invoke'\n", "- Operation: calling API 'WriteLine'\n"),
+                Verify.Diagnostic().WithSpan(8, 17, 8, 27).WithArguments("Operation6", "- Integration: call to 'Invoke'\n", "- Operation: calling API 'WriteLine'\n")            };
+            await Verify.VerifyAnalyzerAsync(test, expected);
+        }
+
+        [Fact]
+        public async Task Not_allowed_calling_func_in_operation() {
+            const string test =
+                """
+                using System;
+                class A
+                {
+                    public void Operation5(Func<int> func) {
+                        Console.WriteLine();
+                        var i = func();
+                    }
+                }
+                """;
+            DiagnosticResult[] expected = {
+                Verify.Diagnostic().WithSpan(4, 17, 4, 27).WithArguments("Operation5", "- Integration: call to 'Invoke'\n", "- Operation: calling API 'WriteLine'\n")
+            };
+            await Verify.VerifyAnalyzerAsync(test, expected);
+        }
+
+        [Fact]
         public async Task Not_allowed_mixing_own_Invoke_with_API_call_in_integration() {
             const string test =
                 """
