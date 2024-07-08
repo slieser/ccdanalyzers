@@ -9,6 +9,7 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.CodeAnalysis" Version="4.9.2" />
     <PackageReference Include="Moq " Version="4.7.142" />
+    <PackageReference Include="NUnit" Version="4.1.0" />
     <PackageReference Include="xunit.assert" Version="2.4.2" />
   </ItemGroup>
 

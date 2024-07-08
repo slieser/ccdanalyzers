@@ -16,7 +16,7 @@ namespace CleanCodeDeveloper.Analyzers
         private const string MessageFormat = "Method '{0}' mixes integration with operation.\n{1}{2}";
         private const string Description = "Integration Operation Segregation Principle (IOSP) is violated.";
 
-        private readonly static DiagnosticDescriptor Rule =
+        public readonly static DiagnosticDescriptor Rule =
             new DiagnosticDescriptor(
                 "CCD0001",
                 Title,
@@ -70,6 +70,10 @@ namespace CleanCodeDeveloper.Analyzers
                     }
                     if (string.Equals(methodSymbol.Name, "ConfigureAwait") && string.Equals(methodSymbol.ContainingNamespace.Name, "Tasks")) {
                         // Skip ConfigureAwait calls as this is the only way to configure where an Awaiter can run.
+                        continue;
+                    }
+                    if (methodSymbol.ContainingNamespace.ToDisplayString().StartsWith("NUnit.Framework")) {
+                        // Skip NUnit calls. Tests otherwise violate the IOSP. Yoou need to call your SUT (integration) and do some asserts (operation).
                         continue;
                     }
                     if (!operations.Contains(methodSymbol.Name)) {

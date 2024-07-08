@@ -13,6 +13,7 @@
         <PackageReference Update="NETStandard.Library" PrivateAssets="all" />
         <PackageReference Include="Microsoft.CodeAnalysis.Testing.Verifiers.XUnit" Version="1.1.1" />
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.9.0" />
+        <PackageReference Include="NUnit" Version="4.1.0" />
         <PackageReference Include="xunit" Version="2.4.2" />
         <Analyzer Include="../CleanCodeDeveloper.Analyzers/bin/Debug/net8.0/CleanCodeDeveloper.Analyzers.dll" />
     </ItemGroup>
