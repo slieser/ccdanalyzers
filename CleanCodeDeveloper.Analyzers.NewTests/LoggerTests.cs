@@ -3,25 +3,24 @@ using Microsoft.CodeAnalysis.Testing;
 
 namespace CleanCodeDeveloper.Analyzers.NewTests;
 
-public class NUnitTests
+public class LoggerTests
 {
     [Test]
     public async Task Should_not_violate_IOSP() {
         const string input = """
-            using NUnit.Framework;
-            [TestFixture]
-            public class ExampleNUnitTests
+            using Microsoft.Extensions.Logging;
+            
+            namespace examples.nunit;
+            
+            public class LoggerExample(ILogger<LoggerExample> logger)
             {
-               [Test]
-               public void Should_not_violate_IOSP() {
-                   var sut = new Sut();
-                   Assert.That(sut.Add(1, 2), Is.EqualTo(3));      
-               }
-            }
-
-            public class Sut
-            {
-               public int Add(int a, int b) => a + b;
+                public void DoSomething() {
+                    logger.LogInformation(nameof(DoSomething));
+                    Integration();
+                }
+            
+                private void Integration() {
+                }
             }
             """;
 
@@ -30,7 +29,7 @@ public class NUnitTests
                 Sources = { input }
             },
             ReferenceAssemblies = ReferenceAssemblies.Net.Net80
-                .AddPackages([ new PackageIdentity("NUnit", "4.1.0"),]) 
+                .AddPackages([ new PackageIdentity("Microsoft.Extensions.Logging.Abstractions", "8.0.1"),]) 
         };
         await cSharpAnalyzerTest.RunAsync();
     }

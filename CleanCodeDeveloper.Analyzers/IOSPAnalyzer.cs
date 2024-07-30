@@ -57,9 +57,13 @@ namespace CleanCodeDeveloper.Analyzers
                     .Symbol as IMethodSymbol;
 
                 if (methodSymbol == null) {
-                    continue;
+                        continue;
                 }
                 if (methodSymbol.DeclaringSyntaxReferences.Length > 0) {
+                    if(methodSymbol.IsVirtual && methodSymbol.Name == method.Name) {
+                        // Skip call to our own base.xxx methods in override methods
+                        continue;
+                    }
                     if (!integrations.Contains(methodSymbol.Name)) {
                         integrations.Add(methodSymbol.Name);
                     }
@@ -72,12 +76,24 @@ namespace CleanCodeDeveloper.Analyzers
                     }
                 }
                 else {
+                    if (string.Equals(methodSymbol.Name, "Run") && string.Equals(methodSymbol.ContainingNamespace.Name, "Tasks")) {
+                        // Skip Task.Run calls
+                        continue;
+                    }
                     if (string.Equals(methodSymbol.Name, "ConfigureAwait") && string.Equals(methodSymbol.ContainingNamespace.Name, "Tasks")) {
                         // Skip ConfigureAwait calls as this is the only way to configure where an Awaiter can run.
                         continue;
                     }
                     if (methodSymbol.ContainingNamespace.ToDisplayString().StartsWith("NUnit.Framework")) {
                         // Skip NUnit calls. Tests otherwise violate the IOSP. Yoou need to call your SUT (integration) and do some asserts (operation).
+                        continue;
+                    }
+                    if (methodSymbol.ContainingNamespace.ToDisplayString().StartsWith("Microsoft.Extensions.Logging")) {
+                        // Skip Logging calls. Integrations would otherwise violate the IOSP.
+                        continue;
+                    }
+                    if(methodSymbol.IsVirtual && methodSymbol.Name == method.Name) {
+                        // Skip call to foreign base.xxx methods in override methods
                         continue;
                     }
                     if (!operations.Contains(methodSymbol.Name)) {
