@@ -13,19 +13,18 @@ namespace CleanCodeDeveloper.Analyzers
     public class IOSPAnalyzer : DiagnosticAnalyzer
     {
         private const string Title = "IOSP violation";
-        private const string MessageFormat = "Method '{0}' mixes integration with operation.\n{1}{2}";
+        private const string MessageFormat = "Method '{0}' mixes integration with operation. Metric = {1}\n{2}{3}";
         private const string Description = "Integration Operation Segregation Principle (IOSP) is violated.";
 
-        public readonly static DiagnosticDescriptor Rule =
-            new DiagnosticDescriptor(
-                "CCD0001",
+        private readonly static DiagnosticDescriptor Rule =
+            new("CCD0001",
                 Title,
                 MessageFormat,
                 "Clean Code Developer Principles",
                 DiagnosticSeverity.Warning,
                 true,
                 Description);
-
+        
         public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [Rule];
 
         public override void Initialize(AnalysisContext context) {
@@ -42,9 +41,9 @@ namespace CleanCodeDeveloper.Analyzers
             var operations = new List<string>();
             var expressions = new List<string>();
             var integrations = new List<string>();
-            
-            var method = (IMethodSymbol) codeBlockAnalysisContext.OwningSymbol;
-            var block = (BlockSyntax) codeBlockAnalysisContext.CodeBlock.ChildNodes().FirstOrDefault(n => n.IsKind(SyntaxKind.Block));
+
+            var method = (IMethodSymbol)codeBlockAnalysisContext.OwningSymbol;
+            var block = (BlockSyntax)codeBlockAnalysisContext.CodeBlock.ChildNodes().FirstOrDefault(n => n.IsKind(SyntaxKind.Block));
             if (block == null || block.Statements.Count <= 0) {
                 return;
             }
@@ -57,10 +56,10 @@ namespace CleanCodeDeveloper.Analyzers
                     .Symbol as IMethodSymbol;
 
                 if (methodSymbol == null) {
-                        continue;
+                    continue;
                 }
                 if (methodSymbol.DeclaringSyntaxReferences.Length > 0) {
-                    if(methodSymbol.IsVirtual && methodSymbol.Name == method.Name) {
+                    if (methodSymbol.IsVirtual && methodSymbol.Name == method.Name) {
                         // Skip call to our own base.xxx methods in override methods
                         continue;
                     }
@@ -69,8 +68,8 @@ namespace CleanCodeDeveloper.Analyzers
                     }
                 }
                 else if (methodSymbol.MethodKind is MethodKind.DelegateInvoke && (
-                         methodSymbol.ContainingType.ToDisplayString().StartsWith("System.Action") ||
-                         methodSymbol.ContainingType.ToDisplayString().StartsWith("System.Func"))) {
+                             methodSymbol.ContainingType.ToDisplayString().StartsWith("System.Action") ||
+                             methodSymbol.ContainingType.ToDisplayString().StartsWith("System.Func"))) {
                     if (!integrations.Contains(methodSymbol.Name)) {
                         integrations.Add(methodSymbol.Name);
                     }
@@ -85,14 +84,18 @@ namespace CleanCodeDeveloper.Analyzers
                         continue;
                     }
                     if (methodSymbol.ContainingNamespace.ToDisplayString().StartsWith("NUnit.Framework")) {
-                        // Skip NUnit calls. Tests otherwise violate the IOSP. Yoou need to call your SUT (integration) and do some asserts (operation).
+                        // Skip NUnit calls. Tests otherwise violate the IOSP. You need to call your SUT (integration) and do some asserts (operation).
+                        continue;
+                    }
+                    if (methodSymbol.ContainingNamespace.ToDisplayString().StartsWith("VerifyNUnit")) {
+                        // Skip Verify calls. Tests otherwise violate the IOSP
                         continue;
                     }
                     if (methodSymbol.ContainingNamespace.ToDisplayString().StartsWith("Microsoft.Extensions.Logging")) {
                         // Skip Logging calls. Integrations would otherwise violate the IOSP.
                         continue;
                     }
-                    if(methodSymbol.IsVirtual && methodSymbol.Name == method.Name) {
+                    if (methodSymbol.IsVirtual && methodSymbol.Name == method.Name) {
                         // Skip call to foreign base.xxx methods in override methods
                         continue;
                     }
@@ -102,6 +105,7 @@ namespace CleanCodeDeveloper.Analyzers
                 }
             }
 
+            // TODO: verify that in for-loops only canonical expressions (0, i < 10, i++) are useded
             var expressionSymbols = FindAll(block, false, node => node is BinaryExpressionSyntax && !(node.Parent is ForStatementSyntax));
             foreach (var e in expressionSymbols) {
                 if (!expressions.Contains(e.ToString())) {
@@ -112,13 +116,26 @@ namespace CleanCodeDeveloper.Analyzers
             if (!((operations.Any() || expressions.Any()) && integrations.Any())) {
                 return;
             }
-                
+
             var tree = block.SyntaxTree;
             var location = method.Locations.First(l => tree.Equals(l.SourceTree));
             var integrationMessage = FormatIntegrations(integrations);
             var operationMessage = FormatOperations(operations, expressions);
-            var diagnostic = Diagnostic.Create(Rule, location, method.Name, integrationMessage, operationMessage);
+            var metric = CaclulateMetric(operations.Count, expressions.Count, integrations.Count);
+            var diagnostic = Diagnostic.Create(Rule, location, method.Name, metric, integrationMessage, operationMessage);
             codeBlockAnalysisContext.ReportDiagnostic(diagnostic);
+        }
+
+        private static int CaclulateMetric(int operationsCount, int expressionsCount, int integrationsCount) {
+            if (integrationsCount == 0) {
+                // No integrations are called, so we have an Operation
+                return 0;
+            }
+            // Integrations are called. If no operations and no expressions, everything is fine.
+            if(operationsCount == 0 && expressionsCount == 0) {
+                return 0;
+            }
+            return operationsCount + 2 * expressionsCount;
         }
 
         private static string FormatIntegrations(List<string> integrations) {

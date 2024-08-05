@@ -29,7 +29,7 @@ internal class A
     public void Integration3() {
         for (var i = 0; i < 10; i++) {
             Operation3(i);
-            throw new Exception();
+            //throw new Exception();
         }
     }
 
