@@ -135,7 +135,12 @@ namespace CleanCodeDeveloper.Analyzers
             if(operationsCount == 0 && expressionsCount == 0) {
                 return 0;
             }
-            return operationsCount + 2 * expressionsCount;
+            if (integrationsCount > operationsCount) {
+                // More integration than operation. Caclulate the "bad" operations and expressions
+                return operationsCount + 2 * expressionsCount;
+            }
+            // More operations than integrations. Caclulate the "bad" integrations
+            return integrationsCount;
         }
 
         private static string FormatIntegrations(List<string> integrations) {

@@ -10,6 +10,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "examples.nunit", "examples.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CleanCodeDeveloper.Analyzers.NewTests", "CleanCodeDeveloper.Analyzers.NewTests\CleanCodeDeveloper.Analyzers.NewTests.csproj", "{4B8959AD-08E1-4F18-A407-149B49B2E0FC}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IncludedProject", "IncludedProject\IncludedProject.csproj", "{F6ECD727-47EC-4286-B6DD-1AA07EC8B360}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -36,5 +38,9 @@ Global
 		{4B8959AD-08E1-4F18-A407-149B49B2E0FC}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4B8959AD-08E1-4F18-A407-149B49B2E0FC}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4B8959AD-08E1-4F18-A407-149B49B2E0FC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F6ECD727-47EC-4286-B6DD-1AA07EC8B360}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F6ECD727-47EC-4286-B6DD-1AA07EC8B360}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F6ECD727-47EC-4286-B6DD-1AA07EC8B360}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F6ECD727-47EC-4286-B6DD-1AA07EC8B360}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
