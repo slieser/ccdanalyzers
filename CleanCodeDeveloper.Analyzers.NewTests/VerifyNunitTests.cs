@@ -35,7 +35,7 @@ public class VerifyNunitTests
             TestState = {
                 Sources = { input }
             },
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net90
                 .AddPackages([ 
                     new PackageIdentity("NUnit", "4.1.0"),
                     new PackageIdentity("Verify.NUnit", "26.1.6"),

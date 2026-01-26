@@ -1,13 +1,13 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net8.0</TargetFramework>
+        <TargetFramework>net9.0</TargetFramework>
         <IncludeBuildOutput>false</IncludeBuildOutput>
         <IncludeSymbols>false</IncludeSymbols>
         <IsPackable>true</IsPackable>
         <Product>Clean Code Developer Analyzers</Product>
-        <AssemblyVersion>0.4.1</AssemblyVersion>
-        <FileVersion>0.4.1</FileVersion>
+        <AssemblyVersion>0.4.2</AssemblyVersion>
+        <FileVersion>0.4.2</FileVersion>
         <Title>Clean Code Developer Analyzers</Title>
         <NeutralLanguage>en-001</NeutralLanguage>
         <LangVersion>default</LangVersion>
@@ -18,7 +18,7 @@
 
     <PropertyGroup>
         <PackageId>CleanCodeDeveloper.Analyzers</PackageId>
-        <PackageVersion>0.4.1</PackageVersion>
+        <PackageVersion>0.4.2</PackageVersion>
         <Authors>Stefan Lieser - CCD Akademie GmbH</Authors>
         <RepositoryUrl>https://github.com/slieser/ccdanalyzers</RepositoryUrl>
         <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
@@ -38,10 +38,11 @@
 
     <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
       <OutputPath>bin/Release/</OutputPath>
+      <DebugSymbols>true</DebugSymbols>
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.10.0" PrivateAssets="all" />
+        <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.13.0" PrivateAssets="all" />
     </ItemGroup>
 
     <ItemGroup>

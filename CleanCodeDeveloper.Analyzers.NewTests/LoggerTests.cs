@@ -28,7 +28,7 @@ public class LoggerTests
             TestState = {
                 Sources = { input }
             },
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net90
                 .AddPackages([ new PackageIdentity("Microsoft.Extensions.Logging.Abstractions", "8.0.1"),]) 
         };
         await cSharpAnalyzerTest.RunAsync();

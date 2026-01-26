@@ -39,7 +39,7 @@ public class OtherProjectTests
                 Sources = { input },
                 AdditionalReferences = { myProject }
             },
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80,
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net90,
         };
         await cSharpAnalyzerTest.RunAsync();
     }

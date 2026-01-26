@@ -59,7 +59,7 @@ internal class A
 
     public void Operation() {
         void OperationIntern() {
-            var x = 3 + 5;          // Expression => Operation
+            _ = 3 + 5;          // Expression => Operation
         } 
         
         Console.WriteLine();        // API Call => Operation
@@ -85,7 +85,7 @@ internal class A
     public void Operation7() {
         var myDelegate = new MyDelegate(Operation1);
         myDelegate();
-        var i = 42 + 1;
+        _ = 42 + 1;
     }
 
     public class HasEvent

@@ -29,7 +29,7 @@ public class NUnitTests
             TestState = {
                 Sources = { input }
             },
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net80
+            ReferenceAssemblies = ReferenceAssemblies.Net.Net90
                 .AddPackages([ new PackageIdentity("NUnit", "4.1.0"),]) 
         };
         await cSharpAnalyzerTest.RunAsync();

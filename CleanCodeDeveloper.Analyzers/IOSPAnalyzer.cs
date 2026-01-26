@@ -1,11 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.IO;
 using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
+using Microsoft.CodeAnalysis.Text;
 
 namespace CleanCodeDeveloper.Analyzers
 {
@@ -15,6 +17,11 @@ namespace CleanCodeDeveloper.Analyzers
         private const string Title = "IOSP violation";
         private const string MessageFormat = "Method '{0}' mixes integration with operation. Metric = {1}\n{2}{3}";
         private const string Description = "Integration Operation Segregation Principle (IOSP) is violated.";
+        private static List<string> _namespacesToIgnore = [
+            "NUnit.Framework",
+            "VerifyNUnit",
+            "Microsoft.Extensions.Logging"
+        ];
 
         private readonly static DiagnosticDescriptor Rule =
             new("CCD0001",
@@ -28,9 +35,32 @@ namespace CleanCodeDeveloper.Analyzers
         public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [Rule];
 
         public override void Initialize(AnalysisContext context) {
+            SyntaxKind[] possibleSyntaxKinds = { SyntaxKind.SimpleMemberAccessExpression, SyntaxKind.ObjectCreationExpression };
+            context.RegisterSyntaxNodeAction(AnalyzeAdditionalFiles, possibleSyntaxKinds);
             context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
             context.EnableConcurrentExecution();
             context.RegisterCodeBlockAction(CodeBlockAction);
+        }
+
+        private void AnalyzeAdditionalFiles(SyntaxNodeAnalysisContext context) {
+/*
+            Console.WriteLine("Fucking analyzer file count: " + context.Options.AdditionalFiles.Length);
+            var additionalFiles = context.Options.AdditionalFiles;
+            var namespaceFile = additionalFiles.FirstOrDefault(file => Path.GetFileName(file.Path).Equals("namespaces.txt"));
+            if(namespaceFile == null) {
+                return;
+            }
+            var fileText = namespaceFile.GetText(context.CancellationToken);
+            if(fileText == null) {
+                return;
+            }
+*/
+            var config = context.Options.AnalyzerConfigOptionsProvider.GetOptions(context.Node.SyntaxTree);
+            config.TryGetValue("iosp_violation.CCD0001.namespaces", out var configValue);
+            if (string.IsNullOrEmpty(configValue)) {
+                return;
+            }
+            _namespacesToIgnore = configValue.Split(",").ToList();
         }
 
         private static void CodeBlockAction(CodeBlockAnalysisContext codeBlockAnalysisContext) {
@@ -83,16 +113,8 @@ namespace CleanCodeDeveloper.Analyzers
                         // Skip ConfigureAwait calls as this is the only way to configure where an Awaiter can run.
                         continue;
                     }
-                    if (methodSymbol.ContainingNamespace.ToDisplayString().StartsWith("NUnit.Framework")) {
-                        // Skip NUnit calls. Tests otherwise violate the IOSP. You need to call your SUT (integration) and do some asserts (operation).
-                        continue;
-                    }
-                    if (methodSymbol.ContainingNamespace.ToDisplayString().StartsWith("VerifyNUnit")) {
-                        // Skip Verify calls. Tests otherwise violate the IOSP
-                        continue;
-                    }
-                    if (methodSymbol.ContainingNamespace.ToDisplayString().StartsWith("Microsoft.Extensions.Logging")) {
-                        // Skip Logging calls. Integrations would otherwise violate the IOSP.
+                    if(_namespacesToIgnore.Any(@namespace => methodSymbol.ContainingNamespace.ToDisplayString().StartsWith(@namespace))) {
+                        // Skip calls to ignored namespaces
                         continue;
                     }
                     if (methodSymbol.IsVirtual && methodSymbol.Name == method.Name) {

@@ -1,14 +1,14 @@
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis.Testing;
-using Xunit;
-using Verify = Microsoft.CodeAnalysis.CSharp.Testing.XUnit.AnalyzerVerifier<CleanCodeDeveloper.Analyzers.IOSPAnalyzer>;
+using NUnit.Framework;
+using Verify = Microsoft.CodeAnalysis.CSharp.Testing.CSharpAnalyzerVerifier<CleanCodeDeveloper.Analyzers.IOSPAnalyzer, Microsoft.CodeAnalysis.Testing.DefaultVerifier>;
 
 namespace CleanCodeDeveloper.Analyzers.Tests
 {
     public class IOSPAnalyzerTests
     {
 
-        [Fact]
+        [Test]
         public async Task Not_allowed_Integration_with_expression_in_call() {
             const string test =
                 """
@@ -28,7 +28,7 @@ namespace CleanCodeDeveloper.Analyzers.Tests
             await Verify.VerifyAnalyzerAsync(test, expected);
         }
 
-        [Fact]
+        [Test]
         public async Task Allowed_Canonical_foreach_loop_in_integration() {
             const string test =
                 """
@@ -55,7 +55,7 @@ namespace CleanCodeDeveloper.Analyzers.Tests
             await Verify.VerifyAnalyzerAsync(test, expected);
         }
 
-        [Fact]
+        [Test]
         public async Task Allowed_for_loop_with_expression_in_integration() {
             const string test =
                 """
@@ -76,7 +76,7 @@ namespace CleanCodeDeveloper.Analyzers.Tests
             await Verify.VerifyAnalyzerAsync(test, expected);
         }
 
-        [Fact]
+        [Test]
         public async Task Allowed_try_catch_in_integration() {
             const string test =
                 """
@@ -99,7 +99,7 @@ namespace CleanCodeDeveloper.Analyzers.Tests
             await Verify.VerifyAnalyzerAsync(test, expected);
         }
 
-        [Fact]
+        [Test]
         public async Task Allowed_try_catch_with_exception_in_integration() {
             const string test =
                 """
@@ -125,7 +125,7 @@ namespace CleanCodeDeveloper.Analyzers.Tests
             await Verify.VerifyAnalyzerAsync(test, expected);
         }
 
-        [Fact]
+        [Test]
         public async Task Allowed_throwing_exceptions_in_integration() {
             const string test =
                 """
@@ -145,7 +145,7 @@ namespace CleanCodeDeveloper.Analyzers.Tests
             await Verify.VerifyAnalyzerAsync(test, expected);
         }
 
-        [Fact]
+        [Test]
         public async Task Allowed_calling_actions_in_integration() {
             const string test =
                 """
@@ -165,7 +165,7 @@ namespace CleanCodeDeveloper.Analyzers.Tests
             await Verify.VerifyAnalyzerAsync(test, expected);
         }
 
-        [Fact]
+        [Test]
         public async Task Allowed_calling_func_in_integration() {
             const string test =
                 """
@@ -185,7 +185,7 @@ namespace CleanCodeDeveloper.Analyzers.Tests
             await Verify.VerifyAnalyzerAsync(test, expected);
         }
 
-        [Fact]
+        [Test]
         public async Task Not_allowed_calling_actions_in_operation() {
             const string test =
                 """
@@ -208,7 +208,7 @@ namespace CleanCodeDeveloper.Analyzers.Tests
             await Verify.VerifyAnalyzerAsync(test, expected);
         }
 
-        [Fact]
+        [Test]
         public async Task Not_allowed_calling_func_in_operation() {
             const string test =
                 """
@@ -227,7 +227,7 @@ namespace CleanCodeDeveloper.Analyzers.Tests
             await Verify.VerifyAnalyzerAsync(test, expected);
         }
 
-        [Fact]
+        [Test]
         public async Task Not_allowed_mixing_own_Invoke_with_API_call_in_integration() {
             const string test =
                 """
@@ -248,7 +248,7 @@ namespace CleanCodeDeveloper.Analyzers.Tests
             await Verify.VerifyAnalyzerAsync(test, expected);
         }
 
-        [Fact]
+        [Test]
         public async Task Not_allowed_expression_in_for_loop_block_in_integration() {
             const string test =
                 """
@@ -270,7 +270,7 @@ namespace CleanCodeDeveloper.Analyzers.Tests
             await Verify.VerifyAnalyzerAsync(test, expected);
         }
 
-        [Fact]
+        [Test]
         public async Task Allowed_local_method_call_in_integration() {
             const string test =
                 """
@@ -291,7 +291,7 @@ namespace CleanCodeDeveloper.Analyzers.Tests
             await Verify.VerifyAnalyzerAsync(test, expected);
         }
 
-        [Fact]
+        [Test]
         public async Task Not_allowed_local_method_call__with_expression_in_integration() {
             const string test =
                 """
@@ -314,7 +314,7 @@ namespace CleanCodeDeveloper.Analyzers.Tests
             await Verify.VerifyAnalyzerAsync(test, expected);
         }
 
-        [Fact]
+        [Test]
         public async Task Multiple_integration_calls_are_listed_only_once_in_message() {
             const string test =
                 """
@@ -337,7 +337,7 @@ namespace CleanCodeDeveloper.Analyzers.Tests
             await Verify.VerifyAnalyzerAsync(test, expected);
         }
 
-        [Fact]
+        [Test]
         public async Task Multiple_expressions_are_listed_only_once_in_message() {
             const string test =
                 """
@@ -361,7 +361,7 @@ namespace CleanCodeDeveloper.Analyzers.Tests
         }
 
 
-        [Fact]
+        [Test]
         public async Task Invocation_of_ConfigureAwait_does_not_create_message() {
             const string input = 
                 """

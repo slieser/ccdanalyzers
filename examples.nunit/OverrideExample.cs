@@ -4,7 +4,7 @@ public class OverrideExample : MyBaseClass
 {
     public override void DoSomething() {
         base.DoSomething();
-        var _ = 5 + 4;
+        _ = 5 + 4;
     }
 }
 
