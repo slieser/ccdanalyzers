@@ -87,6 +87,9 @@ namespace CleanCodeDeveloper.Analyzers
             var integrations = new List<string>();
 
             var method = (IMethodSymbol)codeBlockAnalysisContext.OwningSymbol;
+            if (namespacesToIgnore.Any(@namespace => method.ContainingNamespace.ToDisplayString().StartsWith(@namespace))) {
+                return;
+            }
             var block = (BlockSyntax)codeBlockAnalysisContext.CodeBlock.ChildNodes().FirstOrDefault(n => n.IsKind(SyntaxKind.Block));
             if (block == null || block.Statements.Count <= 0) {
                 return;
@@ -103,6 +106,9 @@ namespace CleanCodeDeveloper.Analyzers
                     continue;
                 }
                 if (methodSymbol.DeclaringSyntaxReferences.Length > 0) {
+                    if (namespacesToIgnore.Any(@namespace => methodSymbol.ContainingNamespace.ToDisplayString().StartsWith(@namespace))) {
+                        continue;
+                    }
                     if (methodSymbol.IsVirtual && methodSymbol.Name == method.Name) {
                         // Skip call to our own base.xxx methods in override methods
                         continue;
