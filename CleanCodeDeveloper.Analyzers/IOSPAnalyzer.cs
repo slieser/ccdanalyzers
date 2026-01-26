@@ -17,7 +17,7 @@ namespace CleanCodeDeveloper.Analyzers
         private const string Title = "IOSP violation";
         private const string MessageFormat = "Method '{0}' mixes integration with operation. Metric = {1}\n{2}{3}";
         private const string Description = "Integration Operation Segregation Principle (IOSP) is violated.";
-        private static List<string> _namespacesToIgnore = [
+        private static readonly ImmutableArray<string> DefaultNamespacesToIgnore = [
             "NUnit.Framework",
             "VerifyNUnit",
             "Microsoft.Extensions.Logging"
@@ -35,35 +35,49 @@ namespace CleanCodeDeveloper.Analyzers
         public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [Rule];
 
         public override void Initialize(AnalysisContext context) {
-            SyntaxKind[] possibleSyntaxKinds = { SyntaxKind.SimpleMemberAccessExpression, SyntaxKind.ObjectCreationExpression };
-            context.RegisterSyntaxNodeAction(AnalyzeAdditionalFiles, possibleSyntaxKinds);
+            context.RegisterCompilationStartAction(startContext => {
+                var namespacesToIgnore = GetNamespacesToIgnore(startContext);
+                startContext.RegisterCodeBlockAction(codeBlockContext =>
+                    CodeBlockAction(codeBlockContext, namespacesToIgnore));
+            });
             context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
             context.EnableConcurrentExecution();
-            context.RegisterCodeBlockAction(CodeBlockAction);
         }
 
-        private void AnalyzeAdditionalFiles(SyntaxNodeAnalysisContext context) {
-/*
-            Console.WriteLine("Fucking analyzer file count: " + context.Options.AdditionalFiles.Length);
+        private static ImmutableArray<string> GetNamespacesToIgnore(CompilationStartAnalysisContext context) {
+
             var additionalFiles = context.Options.AdditionalFiles;
             var namespaceFile = additionalFiles.FirstOrDefault(file => Path.GetFileName(file.Path).Equals("namespaces.txt"));
             if(namespaceFile == null) {
-                return;
+                return DefaultNamespacesToIgnore;
             }
             var fileText = namespaceFile.GetText(context.CancellationToken);
             if(fileText == null) {
-                return;
+                return DefaultNamespacesToIgnore;
             }
-*/
-            var config = context.Options.AnalyzerConfigOptionsProvider.GetOptions(context.Node.SyntaxTree);
+
+            var config = context.Options.AnalyzerConfigOptionsProvider.GetOptions(namespaceFile);
             config.TryGetValue("iosp_violation.CCD0001.namespaces", out var configValue);
-            if (string.IsNullOrEmpty(configValue)) {
-                return;
+
+            var namespacesFromFile = fileText.Lines
+                .Select(line => line.ToString().Trim())
+                .Where(line => !string.IsNullOrWhiteSpace(line))
+                .Where(line => !line.StartsWith("#", StringComparison.Ordinal))
+                .ToList();
+
+            if (!string.IsNullOrWhiteSpace(configValue)) {
+                return configValue
+                    .Split(",", StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                    .ToImmutableArray();
             }
-            _namespacesToIgnore = configValue.Split(",").ToList();
+
+            return namespacesFromFile.Count > 0
+                ? namespacesFromFile.ToImmutableArray()
+                : DefaultNamespacesToIgnore;
         }
 
-        private static void CodeBlockAction(CodeBlockAnalysisContext codeBlockAnalysisContext) {
+        private static void CodeBlockAction(CodeBlockAnalysisContext codeBlockAnalysisContext,
+            ImmutableArray<string> namespacesToIgnore) {
             if (codeBlockAnalysisContext.OwningSymbol.Kind != SymbolKind.Method) {
                 return;
             }
@@ -113,7 +127,7 @@ namespace CleanCodeDeveloper.Analyzers
                         // Skip ConfigureAwait calls as this is the only way to configure where an Awaiter can run.
                         continue;
                     }
-                    if(_namespacesToIgnore.Any(@namespace => methodSymbol.ContainingNamespace.ToDisplayString().StartsWith(@namespace))) {
+                    if(namespacesToIgnore.Any(@namespace => methodSymbol.ContainingNamespace.ToDisplayString().StartsWith(@namespace))) {
                         // Skip calls to ignored namespaces
                         continue;
                     }

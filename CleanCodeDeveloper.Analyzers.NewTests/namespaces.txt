@@ -1,0 +1,3 @@
+NUnit.Framework
+VerifyNUnit
+Microsoft.Extensions.Logging
