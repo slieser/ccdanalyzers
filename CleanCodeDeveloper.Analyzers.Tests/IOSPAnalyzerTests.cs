@@ -1,4 +1,5 @@
 using System.Threading.Tasks;
+using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Testing;
 using NUnit.Framework;
 using Verify = Microsoft.CodeAnalysis.CSharp.Testing.CSharpAnalyzerVerifier<CleanCodeDeveloper.Analyzers.IOSPAnalyzer, Microsoft.CodeAnalysis.Testing.DefaultVerifier>;
@@ -409,6 +410,89 @@ namespace CleanCodeDeveloper.Analyzers.Tests
             DiagnosticResult[] expected = {
             };
             await Verify.VerifyAnalyzerAsync(input, expected);
+        }
+
+        [Test]
+        public async Task Diagnostic_respects_min_metric_setting() {
+            const string testCode =
+                """
+                using System;
+                class A
+                {
+                    public void Method1() {
+                        Operation();
+                        Console.WriteLine();
+                    }
+                
+                    public void Method2() {
+                        Operation(1 + 5);
+                    }
+                
+                    public void Operation() {
+                    }
+                    public void Operation(int x) {
+                    }
+                }
+                """;
+            var expected = Verify.Diagnostic()
+                .WithSpan(9, 17, 9, 24)
+                .WithArguments("Method2", "2", "- Integration: call to 'Operation'\n", "- Operation: expression '1 + 5'\n");
+            var test = new CSharpAnalyzerTest<IOSPAnalyzer, DefaultVerifier> {
+                TestState = {
+                    Sources = { testCode },
+                    AnalyzerConfigFiles = {
+                        ("/.editorconfig",
+                        """
+                        root = true
+
+                        [*.cs]
+                        dotnet_diagnostic.CCD0001.min_metric = 2
+                        """)
+                    }
+                },
+                ExpectedDiagnostics = { expected }
+            };
+            await test.RunAsync();
+        }
+
+        [Test]
+        public async Task Diagnostic_respects_min_metric_setting2() {
+            const string testCode =
+                """
+                using System;
+                class A
+                {
+                    public void Method1() {
+                        Operation();
+                        Console.WriteLine();
+                    }
+                
+                    public void Method2() {
+                        Operation(1 + 5);
+                    }
+                
+                    public void Operation() {
+                    }
+                    public void Operation(int x) {
+                    }
+                }
+                """;
+            var test = new CSharpAnalyzerTest<IOSPAnalyzer, DefaultVerifier> {
+                TestState = {
+                    Sources = { testCode },
+                    AnalyzerConfigFiles = {
+                        ("/.editorconfig",
+                        """
+                        root = true
+
+                        [*.cs]
+                        dotnet_diagnostic.CCD0001.min_metric = 3
+                        """)
+                    }
+                },
+                ExpectedDiagnostics = { }
+            };
+            await test.RunAsync();
         }
     }
 }

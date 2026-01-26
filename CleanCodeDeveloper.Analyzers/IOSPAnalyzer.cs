@@ -17,6 +17,8 @@ namespace CleanCodeDeveloper.Analyzers
         private const string Title = "IOSP violation";
         private const string MessageFormat = "Method '{0}' mixes integration with operation. Metric = {1}\n{2}{3}";
         private const string Description = "Integration Operation Segregation Principle (IOSP) is violated.";
+        private const string MinMetricOptionKey = "dotnet_diagnostic.CCD0001.min_metric";
+        private const int DefaultMinMetric = 1;
         private static readonly ImmutableArray<string> DefaultNamespacesToIgnore = [
             "NUnit.Framework",
             "VerifyNUnit",
@@ -164,8 +166,23 @@ namespace CleanCodeDeveloper.Analyzers
             var integrationMessage = FormatIntegrations(integrations);
             var operationMessage = FormatOperations(operations, expressions);
             var metric = CaclulateMetric(operations.Count, expressions.Count, integrations.Count);
+            var minMetric = GetMinMetric(codeBlockAnalysisContext);
+            if (metric < minMetric) {
+                return;
+            }
             var diagnostic = Diagnostic.Create(Rule, location, method.Name, metric, integrationMessage, operationMessage);
             codeBlockAnalysisContext.ReportDiagnostic(diagnostic);
+        }
+
+        private static int GetMinMetric(CodeBlockAnalysisContext context) {
+            var options = context.Options.AnalyzerConfigOptionsProvider.GetOptions(context.SemanticModel.SyntaxTree);
+            if (!options.TryGetValue(MinMetricOptionKey, out var value)) {
+                return DefaultMinMetric;
+            }
+            if (!int.TryParse(value, out var minMetric)) {
+                return DefaultMinMetric;
+            }
+            return minMetric < DefaultMinMetric ? DefaultMinMetric : minMetric;
         }
 
         private static int CaclulateMetric(int operationsCount, int expressionsCount, int integrationsCount) {
