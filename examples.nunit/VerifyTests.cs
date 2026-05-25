@@ -1,9 +1,3 @@
-using NUnit.Framework;
-using VerifyNUnit;
-using VerifyTests;
-using static global::VerifyNUnit.Verifier;
-using System.Threading.Tasks;
-
 namespace examples.nunit;
 
 [TestFixture]

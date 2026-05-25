@@ -1,4 +1,3 @@
-using System.Collections.Immutable;
 using IncludedProject;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Testing;

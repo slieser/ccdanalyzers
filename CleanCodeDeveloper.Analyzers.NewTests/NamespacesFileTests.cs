@@ -1,6 +1,3 @@
-using Microsoft.CodeAnalysis.Testing;
-using Verify = Microsoft.CodeAnalysis.CSharp.Testing.CSharpAnalyzerVerifier<CleanCodeDeveloper.Analyzers.IOSPAnalyzer, Microsoft.CodeAnalysis.Testing.DefaultVerifier>;
-
 namespace CleanCodeDeveloper.Analyzers.NewTests;
 
 [TestFixture]

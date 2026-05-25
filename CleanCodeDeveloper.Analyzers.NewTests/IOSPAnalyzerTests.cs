@@ -1,5 +1,3 @@
-using Microsoft.CodeAnalysis.CSharp.Testing;
-using Microsoft.CodeAnalysis.Testing;
 using Verify = Microsoft.CodeAnalysis.CSharp.Testing.CSharpAnalyzerVerifier<CleanCodeDeveloper.Analyzers.IOSPAnalyzer, Microsoft.CodeAnalysis.Testing.DefaultVerifier>;
 
 namespace CleanCodeDeveloper.Analyzers.NewTests;
@@ -667,6 +665,106 @@ public class IOSPAnalyzerTests
 
                 private Task OneAsync() => Task.CompletedTask;
                 private Task TwoAsync() => Task.CompletedTask;
+            }
+            """;
+        await TestHelpers.Build(input).RunAsync();
+    }
+
+    [Test]
+    public async Task Expression_bodied_method_with_integration_call_is_clean() {
+        const string input = """
+            class A
+            {
+                public int Run() => Compute();
+                private int Compute() => 42;
+            }
+            """;
+        await TestHelpers.Build(input).RunAsync();
+    }
+
+    [Test]
+    public async Task Expression_bodied_method_with_expression_only_is_clean() {
+        const string input = """
+            class A
+            {
+                public int Add(int a, int b) => a + b;
+            }
+            """;
+        await TestHelpers.Build(input).RunAsync();
+    }
+
+    [Test]
+    public async Task Expression_bodied_method_with_integration_and_expression_is_flagged() {
+        const string input = """
+            class A
+            {
+                public int Run() => Compute() + 1;
+                private int Compute() => 42;
+            }
+            """;
+        var expected = Verify.Diagnostic()
+            .WithSpan(3, 16, 3, 19)
+            .WithArguments("Run", "2", "- Integration: call to 'Compute'\n", "- Operation: expression 'Compute() + 1'\n");
+        await TestHelpers.Build(input, expected).RunAsync();
+    }
+
+    [Test]
+    public async Task Property_getter_with_block_body_mixing_integration_and_expression_is_flagged() {
+        const string input = """
+            class A
+            {
+                public int Value
+                {
+                    get
+                    {
+                        var x = 1 + 2;
+                        return Compute();
+                    }
+                }
+                private int Compute() => 42;
+            }
+            """;
+        var expected = Verify.Diagnostic()
+            .WithSpan(5, 9, 5, 12)
+            .WithArguments("get_Value", "2", "- Integration: call to 'Compute'\n", "- Operation: expression '1 + 2'\n");
+        await TestHelpers.Build(input, expected).RunAsync();
+    }
+
+    [Test]
+    public async Task Methods_with_same_name_from_different_types_are_counted_separately() {
+        const string input = """
+            class A
+            {
+                public void Run() {
+                    B.DoIt();
+                    C.DoIt();
+                    var s = 42.ToString();
+                }
+            }
+
+            class B { public static void DoIt() { } }
+            class C { public static void DoIt() { } }
+            """;
+        // integrations: 2 distinct keys (B.DoIt, C.DoIt) – display dedups to "DoIt"
+        // operations: 1 (ToString). integrations(2) > operations(1) → metric = 1 + 0 = 1
+        var expected = Verify.Diagnostic()
+            .WithSpan(3, 17, 3, 20)
+            .WithArguments("Run", "1", "- Integration: call to 'DoIt'\n", "- Operation: calling API 'ToString'\n");
+        await TestHelpers.Build(input, expected).RunAsync();
+    }
+
+    [Test]
+    public async Task For_loop_initializer_is_not_treated_as_canonical_exempt() {
+        // The Condition position is the only one that's exempt; the canonical `i < 10` here is exempt.
+        const string input = """
+            class A
+            {
+                public void Integration() {
+                    for(var i = 0; i < 10; i++) {
+                        Operation();
+                    }
+                }
+                private void Operation() { }
             }
             """;
         await TestHelpers.Build(input).RunAsync();
