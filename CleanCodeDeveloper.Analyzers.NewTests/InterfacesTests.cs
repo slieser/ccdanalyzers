@@ -1,37 +1,34 @@
-using Microsoft.CodeAnalysis.CSharp.Testing;
-using Microsoft.CodeAnalysis.Testing;
-
 namespace CleanCodeDeveloper.Analyzers.NewTests;
 
+[TestFixture]
 public class InterfacesTests
 {
     [Test]
-    public async Task Should_not_violate_IOSP() {
-        // TODO: call a method via interface. Both interface and implementation are defined in the same project. Should be Integration
+    public async Task Method_called_via_local_interface_counts_as_integration() {
         const string input = """
-            using Microsoft.Extensions.Logging;
-            
-            namespace examples.nunit;
-            
-            public class LoggerExample(ILogger<LoggerExample> logger)
+            public interface IGreeter
             {
-                public void DoSomething() {
-                    logger.LogInformation(nameof(DoSomething));
-                    Integration();
+                void Greet();
+            }
+
+            public class Greeter : IGreeter
+            {
+                public void Greet() { }
+            }
+
+            public class Caller
+            {
+                private readonly IGreeter _greeter;
+                public Caller(IGreeter greeter) { _greeter = greeter; }
+
+                public void Run() {
+                    _greeter.Greet();
+                    DoMore();
                 }
-            
-                private void Integration() {
-                }
+
+                private void DoMore() { }
             }
             """;
-
-        var cSharpAnalyzerTest = new CSharpAnalyzerTest<IOSPAnalyzer, DefaultVerifier> {
-            TestState = {
-                Sources = { input }
-            },
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net90
-                .AddPackages([ new PackageIdentity("Microsoft.Extensions.Logging.Abstractions", "8.0.1"),]) 
-        };
-        await cSharpAnalyzerTest.RunAsync();
+        await TestHelpers.Build(input).RunAsync();
     }
 }

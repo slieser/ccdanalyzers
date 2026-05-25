@@ -1,12 +1,12 @@
-using Microsoft.CodeAnalysis.CSharp.Testing;
 using Microsoft.CodeAnalysis.Testing;
 
 namespace CleanCodeDeveloper.Analyzers.NewTests;
 
+[TestFixture]
 public class NUnitTests
 {
     [Test]
-    public async Task Should_not_violate_IOSP() {
+    public async Task NUnit_Assert_is_ignored_when_namespace_listed() {
         const string input = """
             using NUnit.Framework;
             [TestFixture]
@@ -15,7 +15,7 @@ public class NUnitTests
                [Test]
                public void Should_not_violate_IOSP() {
                    var sut = new Sut();
-                   Assert.That(sut.Add(1, 2), Is.EqualTo(3));      
+                   Assert.That(sut.Add(1, 2), Is.EqualTo(3));
                }
             }
 
@@ -24,14 +24,10 @@ public class NUnitTests
                public int Add(int a, int b) => a + b;
             }
             """;
-
-        var cSharpAnalyzerTest = new CSharpAnalyzerTest<IOSPAnalyzer, DefaultVerifier> {
-            TestState = {
-                Sources = { input }
-            },
-            ReferenceAssemblies = ReferenceAssemblies.Net.Net90
-                .AddPackages([ new PackageIdentity("NUnit", "4.1.0"),]) 
-        };
-        await cSharpAnalyzerTest.RunAsync();
+        await TestHelpers.Build(input)
+            .WithDefaultNamespaces()
+            .WithNet9()
+            .WithPackages(new PackageIdentity("NUnit", "4.1.0"))
+            .RunAsync();
     }
 }

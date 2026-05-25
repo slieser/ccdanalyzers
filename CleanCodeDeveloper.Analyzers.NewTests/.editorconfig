@@ -1,4 +1,4 @@
 root = true
 [*.cs]
-CleanCodeDeveloper_Analyzers.CCD0001.Namespaces = "NUnit.Framework"
+dotnet_diagnostic.CCD0001.Namespaces = "NUnit.Framework"
 dotnet_diagnostic.CCD0001.min_metric = 2

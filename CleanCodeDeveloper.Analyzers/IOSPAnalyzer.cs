@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.IO;
@@ -7,7 +7,6 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
-using Microsoft.CodeAnalysis.Text;
 
 namespace CleanCodeDeveloper.Analyzers
 {
@@ -18,161 +17,195 @@ namespace CleanCodeDeveloper.Analyzers
         private const string MessageFormat = "Method '{0}' mixes integration with operation. Metric = {1}\n{2}{3}";
         private const string Description = "Integration Operation Segregation Principle (IOSP) is violated.";
         private const string MinMetricOptionKey = "dotnet_diagnostic.CCD0001.min_metric";
+        private const string AdditionalNamespacesOptionKey = "dotnet_diagnostic.CCD0001.additional_namespaces";
+        private const string NamespacesFileName = "namespaces.txt";
         private const int DefaultMinMetric = 1;
-        private static readonly ImmutableArray<string> DefaultNamespacesToIgnore = [
-            "NUnit.Framework",
-            "VerifyNUnit",
-            "Microsoft.Extensions.Logging"
-        ];
+        private const string TasksNamespace = "Tasks";
+        private const string ActionTypePrefix = "System.Action";
+        private const string FuncTypePrefix = "System.Func";
 
-        private readonly static DiagnosticDescriptor Rule =
+        private static readonly DiagnosticDescriptor Rule =
             new("CCD0001",
                 Title,
                 MessageFormat,
                 "Clean Code Developer Principles",
                 DiagnosticSeverity.Warning,
-                true,
-                Description);
-        
+                isEnabledByDefault: true,
+                description: Description,
+                helpLinkUri: "https://ccd-akademie.de/iosp-analyzer");
+
         public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [Rule];
 
         public override void Initialize(AnalysisContext context) {
+            context.EnableConcurrentExecution();
+            context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
             context.RegisterCompilationStartAction(startContext => {
                 var namespacesToIgnore = GetNamespacesToIgnore(startContext);
                 startContext.RegisterCodeBlockAction(codeBlockContext =>
                     CodeBlockAction(codeBlockContext, namespacesToIgnore));
             });
-            context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
-            context.EnableConcurrentExecution();
         }
 
         private static ImmutableArray<string> GetNamespacesToIgnore(CompilationStartAnalysisContext context) {
+            var fromFile = ReadNamespacesFile(context);
+            var fromConfig = ReadAdditionalNamespacesFromConfig(context);
+            return fromFile.AddRange(fromConfig);
+        }
 
-            var additionalFiles = context.Options.AdditionalFiles;
-            var namespaceFile = additionalFiles.FirstOrDefault(file => Path.GetFileName(file.Path).Equals("namespaces.txt"));
-            if(namespaceFile == null) {
-                return DefaultNamespacesToIgnore;
+        private static ImmutableArray<string> ReadNamespacesFile(CompilationStartAnalysisContext context) {
+            var namespaceFile = context.Options.AdditionalFiles
+                .FirstOrDefault(file => string.Equals(Path.GetFileName(file.Path), NamespacesFileName, StringComparison.OrdinalIgnoreCase));
+            if (namespaceFile == null) {
+                return [];
             }
             var fileText = namespaceFile.GetText(context.CancellationToken);
-            if(fileText == null) {
-                return DefaultNamespacesToIgnore;
+            if (fileText == null) {
+                return [];
             }
-
-            var config = context.Options.AnalyzerConfigOptionsProvider.GetOptions(namespaceFile);
-            config.TryGetValue("iosp_violation.CCD0001.namespaces", out var configValue);
-
-            var namespacesFromFile = fileText.Lines
+            return fileText.Lines
                 .Select(line => line.ToString().Trim())
-                .Where(line => !string.IsNullOrWhiteSpace(line))
-                .Where(line => !line.StartsWith("#", StringComparison.Ordinal))
-                .ToList();
-
-            if (!string.IsNullOrWhiteSpace(configValue)) {
-                return configValue
-                    .Split(",", StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-                    .ToImmutableArray();
-            }
-
-            return namespacesFromFile.Count > 0
-                ? namespacesFromFile.ToImmutableArray()
-                : DefaultNamespacesToIgnore;
+                .Where(line => line.Length > 0 && !line.StartsWith("#", StringComparison.Ordinal))
+                .ToImmutableArray();
         }
 
-        private static void CodeBlockAction(CodeBlockAnalysisContext codeBlockAnalysisContext,
-            ImmutableArray<string> namespacesToIgnore) {
-            if (codeBlockAnalysisContext.OwningSymbol.Kind != SymbolKind.Method) {
+        private static ImmutableArray<string> ReadAdditionalNamespacesFromConfig(CompilationStartAnalysisContext context) {
+            var globalOptions = context.Options.AnalyzerConfigOptionsProvider.GlobalOptions;
+            if (!globalOptions.TryGetValue(AdditionalNamespacesOptionKey, out var configValue) || string.IsNullOrWhiteSpace(configValue)) {
+                return [];
+            }
+            return configValue
+                .Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
+                .Select(s => s.Trim())
+                .Where(s => s.Length > 0)
+                .ToImmutableArray();
+        }
+
+        private static void CodeBlockAction(CodeBlockAnalysisContext context, ImmutableArray<string> namespacesToIgnore) {
+            if (context.OwningSymbol is not IMethodSymbol method) {
+                return;
+            }
+            if (IsInIgnoredNamespace(method.ContainingNamespace, namespacesToIgnore)) {
+                return;
+            }
+            var block = context.CodeBlock.ChildNodes().FirstOrDefault(n => n.IsKind(SyntaxKind.Block)) as BlockSyntax;
+            if (block == null || block.Statements.Count == 0) {
                 return;
             }
 
-            var operations = new List<string>();
-            var expressions = new List<string>();
-            var integrations = new List<string>();
+            var integrations = new SortedSet<string>(StringComparer.Ordinal);
+            var operations = new SortedSet<string>(StringComparer.Ordinal);
+            var expressions = new SortedSet<string>(StringComparer.Ordinal);
 
-            var method = (IMethodSymbol)codeBlockAnalysisContext.OwningSymbol;
-            if (namespacesToIgnore.Any(@namespace => method.ContainingNamespace.ToDisplayString().StartsWith(@namespace))) {
-                return;
-            }
-            var block = (BlockSyntax)codeBlockAnalysisContext.CodeBlock.ChildNodes().FirstOrDefault(n => n.IsKind(SyntaxKind.Block));
-            if (block == null || block.Statements.Count <= 0) {
-                return;
-            }
+            ClassifyInvocations(context, method, block, namespacesToIgnore, integrations, operations);
+            CollectExpressions(block, expressions);
 
-            var invocations = FindAll(block, true, node => node.IsKind(SyntaxKind.InvocationExpression));
-            foreach (var invocation in invocations) {
-                var methodSymbol = codeBlockAnalysisContext
-                    .SemanticModel
-                    .GetSymbolInfo(invocation, codeBlockAnalysisContext.CancellationToken)
-                    .Symbol as IMethodSymbol;
-
-                if (methodSymbol == null) {
-                    continue;
-                }
-                if (methodSymbol.DeclaringSyntaxReferences.Length > 0) {
-                    if (namespacesToIgnore.Any(@namespace => methodSymbol.ContainingNamespace.ToDisplayString().StartsWith(@namespace))) {
-                        continue;
-                    }
-                    if (methodSymbol.IsVirtual && methodSymbol.Name == method.Name) {
-                        // Skip call to our own base.xxx methods in override methods
-                        continue;
-                    }
-                    if (!integrations.Contains(methodSymbol.Name)) {
-                        integrations.Add(methodSymbol.Name);
-                    }
-                }
-                else if (methodSymbol.MethodKind is MethodKind.DelegateInvoke && (
-                             methodSymbol.ContainingType.ToDisplayString().StartsWith("System.Action") ||
-                             methodSymbol.ContainingType.ToDisplayString().StartsWith("System.Func"))) {
-                    if (!integrations.Contains(methodSymbol.Name)) {
-                        integrations.Add(methodSymbol.Name);
-                    }
-                }
-                else {
-                    if (string.Equals(methodSymbol.Name, "Run") && string.Equals(methodSymbol.ContainingNamespace.Name, "Tasks")) {
-                        // Skip Task.Run calls
-                        continue;
-                    }
-                    if (string.Equals(methodSymbol.Name, "ConfigureAwait") && string.Equals(methodSymbol.ContainingNamespace.Name, "Tasks")) {
-                        // Skip ConfigureAwait calls as this is the only way to configure where an Awaiter can run.
-                        continue;
-                    }
-                    if(namespacesToIgnore.Any(@namespace => methodSymbol.ContainingNamespace.ToDisplayString().StartsWith(@namespace))) {
-                        // Skip calls to ignored namespaces
-                        continue;
-                    }
-                    if (methodSymbol.IsVirtual && methodSymbol.Name == method.Name) {
-                        // Skip call to foreign base.xxx methods in override methods
-                        continue;
-                    }
-                    if (!operations.Contains(methodSymbol.Name)) {
-                        operations.Add(methodSymbol.Name);
-                    }
-                }
-            }
-
-            // TODO: verify that in for-loops only canonical expressions (0, i < 10, i++) are useded
-            var expressionSymbols = FindAll(block, false, node => node is BinaryExpressionSyntax && !(node.Parent is ForStatementSyntax));
-            foreach (var e in expressionSymbols) {
-                if (!expressions.Contains(e.ToString())) {
-                    expressions.Add(e.ToString());
-                }
-            }
-
-            if (!((operations.Any() || expressions.Any()) && integrations.Any())) {
+            if (!((operations.Count > 0 || expressions.Count > 0) && integrations.Count > 0)) {
                 return;
             }
 
-            var tree = block.SyntaxTree;
-            var location = method.Locations.First(l => tree.Equals(l.SourceTree));
+            var metric = CalculateMetric(operations.Count, expressions.Count, integrations.Count);
+            if (metric < GetMinMetric(context)) {
+                return;
+            }
+
+            var location = method.Locations.FirstOrDefault(l => block.SyntaxTree.Equals(l.SourceTree));
+            if (location == null) {
+                return;
+            }
+
             var integrationMessage = FormatIntegrations(integrations);
             var operationMessage = FormatOperations(operations, expressions);
-            var metric = CaclulateMetric(operations.Count, expressions.Count, integrations.Count);
-            var minMetric = GetMinMetric(codeBlockAnalysisContext);
-            if (metric < minMetric) {
-                return;
-            }
-            var diagnostic = Diagnostic.Create(Rule, location, method.Name, metric, integrationMessage, operationMessage);
-            codeBlockAnalysisContext.ReportDiagnostic(diagnostic);
+            context.ReportDiagnostic(Diagnostic.Create(Rule, location, method.Name, metric, integrationMessage, operationMessage));
         }
+
+        private static void ClassifyInvocations(
+            CodeBlockAnalysisContext context,
+            IMethodSymbol owningMethod,
+            BlockSyntax block,
+            ImmutableArray<string> namespacesToIgnore,
+            SortedSet<string> integrations,
+            SortedSet<string> operations) {
+
+            foreach (var invocation in block.DescendantNodes().OfType<InvocationExpressionSyntax>()) {
+                if (context.SemanticModel.GetSymbolInfo(invocation, context.CancellationToken).Symbol is not IMethodSymbol methodSymbol) {
+                    continue;
+                }
+                var containingNamespace = methodSymbol.ContainingNamespace;
+                if (IsInIgnoredNamespace(containingNamespace, namespacesToIgnore)) {
+                    continue;
+                }
+                if (methodSymbol.IsVirtual && methodSymbol.Name == owningMethod.Name) {
+                    // base.X() call inside an override is neither integration nor operation
+                    continue;
+                }
+
+                if (methodSymbol.DeclaringSyntaxReferences.Length > 0) {
+                    integrations.Add(methodSymbol.Name);
+                    continue;
+                }
+
+                if (IsDelegateInvoke(methodSymbol)) {
+                    integrations.Add(methodSymbol.Name);
+                    continue;
+                }
+                if (IsTaskRun(methodSymbol) || IsConfigureAwait(methodSymbol)) {
+                    continue;
+                }
+                operations.Add(methodSymbol.Name);
+            }
+        }
+
+        private static void CollectExpressions(BlockSyntax block, SortedSet<string> expressions) {
+            // TODO: verify that in for-loops only canonical expressions (0, i < 10, i++) are used
+            foreach (var expression in block.DescendantNodes().OfType<BinaryExpressionSyntax>()) {
+                if (expression.Parent is ForStatementSyntax) {
+                    continue;
+                }
+                if (HasBinaryExpressionAncestorWithin(expression, block)) {
+                    continue;
+                }
+                expressions.Add(expression.ToString());
+            }
+        }
+
+        private static bool HasBinaryExpressionAncestorWithin(SyntaxNode node, SyntaxNode boundary) {
+            for (var parent = node.Parent; parent != null && parent != boundary; parent = parent.Parent) {
+                if (parent is BinaryExpressionSyntax) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        private static bool IsInIgnoredNamespace(INamespaceSymbol containingNamespace, ImmutableArray<string> namespacesToIgnore) {
+            if (containingNamespace == null) {
+                return false;
+            }
+            var display = containingNamespace.ToDisplayString();
+            foreach (var prefix in namespacesToIgnore) {
+                if (display.StartsWith(prefix, StringComparison.Ordinal)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        private static bool IsDelegateInvoke(IMethodSymbol methodSymbol) {
+            if (methodSymbol.MethodKind != MethodKind.DelegateInvoke) {
+                return false;
+            }
+            var containingType = methodSymbol.ContainingType.ToDisplayString();
+            return containingType.StartsWith(ActionTypePrefix, StringComparison.Ordinal)
+                   || containingType.StartsWith(FuncTypePrefix, StringComparison.Ordinal);
+        }
+
+        private static bool IsTaskRun(IMethodSymbol methodSymbol) =>
+            string.Equals(methodSymbol.Name, "Run", StringComparison.Ordinal)
+            && string.Equals(methodSymbol.ContainingNamespace.Name, TasksNamespace, StringComparison.Ordinal);
+
+        private static bool IsConfigureAwait(IMethodSymbol methodSymbol) =>
+            string.Equals(methodSymbol.Name, "ConfigureAwait", StringComparison.Ordinal)
+            && string.Equals(methodSymbol.ContainingNamespace.Name, TasksNamespace, StringComparison.Ordinal);
 
         private static int GetMinMetric(CodeBlockAnalysisContext context) {
             var options = context.Options.AnalyzerConfigOptionsProvider.GetOptions(context.SemanticModel.SyntaxTree);
@@ -185,56 +218,24 @@ namespace CleanCodeDeveloper.Analyzers
             return minMetric < DefaultMinMetric ? DefaultMinMetric : minMetric;
         }
 
-        private static int CaclulateMetric(int operationsCount, int expressionsCount, int integrationsCount) {
+        private static int CalculateMetric(int operationsCount, int expressionsCount, int integrationsCount) {
             if (integrationsCount == 0) {
-                // No integrations are called, so we have an Operation
                 return 0;
             }
-            // Integrations are called. If no operations and no expressions, everything is fine.
-            if(operationsCount == 0 && expressionsCount == 0) {
+            if (operationsCount == 0 && expressionsCount == 0) {
                 return 0;
             }
             if (integrationsCount > operationsCount) {
-                // More integration than operation. Caclulate the "bad" operations and expressions
                 return operationsCount + 2 * expressionsCount;
             }
-            // More operations than integrations. Caclulate the "bad" integrations
             return integrationsCount;
         }
 
-        private static string FormatIntegrations(List<string> integrations) {
-            var result = "";
-            foreach (var integration in integrations) {
-                result += $"- Integration: call to '{integration}'\n";
-            }
-            return result;
-        }
+        private static string FormatIntegrations(IEnumerable<string> integrations) =>
+            string.Concat(integrations.Select(i => $"- Integration: call to '{i}'\n"));
 
-        private static string FormatOperations(List<string> operations, List<string> expressions) {
-            var result = "";
-            foreach (var operation in operations) {
-                result += $"- Operation: calling API '{operation}'\n";
-            }
-            foreach (var expression in expressions) {
-                result += $"- Operation: expression '{expression}'\n";
-            }
-            return result;
-        }
-
-        private static IEnumerable<SyntaxNode> FindAll(SyntaxNode block, bool recursive, Func<SyntaxNode, bool> predicate) {
-            var result = new List<SyntaxNode>();
-
-            var nodes = block.ChildNodes().Where(predicate).ToList();
-            result.AddRange(nodes);
-            if (nodes.Any() && !recursive) {
-                return result;
-            }
-            foreach (var childNode in block.ChildNodes()) {
-                var innerResult = FindAll(childNode, recursive, predicate);
-                result.AddRange(innerResult);
-            }
-                    
-            return result;
-        }
+        private static string FormatOperations(IEnumerable<string> operations, IEnumerable<string> expressions) =>
+            string.Concat(operations.Select(o => $"- Operation: calling API '{o}'\n"))
+            + string.Concat(expressions.Select(e => $"- Operation: expression '{e}'\n"));
     }
 }

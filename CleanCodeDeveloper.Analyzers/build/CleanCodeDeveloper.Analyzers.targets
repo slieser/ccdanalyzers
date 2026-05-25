@@ -1,0 +1,5 @@
+<Project>
+  <ItemGroup Condition="!Exists('$(MSBuildProjectDirectory)/namespaces.txt')">
+    <AdditionalFiles Include="$(MSBuildThisFileDirectory)namespaces.txt" Visible="false" />
+  </ItemGroup>
+</Project>
