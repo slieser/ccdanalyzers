@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
@@ -7,5 +7,6 @@
     <FileVersion>0.6.0.0</FileVersion>
     <InformationalVersion>0.6.0-31</InformationalVersion>
     <Version>0.6.0-31</Version>
+    <LangVersion>default</LangVersion>
   </PropertyGroup>
 </Project>

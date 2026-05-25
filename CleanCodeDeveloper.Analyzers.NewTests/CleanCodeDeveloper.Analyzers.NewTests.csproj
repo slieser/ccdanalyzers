@@ -9,6 +9,7 @@
     <FileVersion>0.6.0.0</FileVersion>
     <InformationalVersion>0.6.0-31</InformationalVersion>
     <Version>0.6.0-31</Version>
+    <LangVersion>default</LangVersion>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="coverlet.collector" Version="6.0.4">

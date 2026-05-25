@@ -15,6 +15,7 @@
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <InformationalVersion>0.6.0-31</InformationalVersion>
     <Version>0.6.0-31</Version>
+    <Nullable>enable</Nullable>
   </PropertyGroup>
   <PropertyGroup>
     <PackageId>CleanCodeDeveloper.Analyzers</PackageId>
