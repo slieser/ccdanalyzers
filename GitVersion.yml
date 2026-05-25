@@ -1,2 +1,3 @@
 assembly-informational-format: '{SemVer}'
+increment: Patch
 next-version: 0.6.1
