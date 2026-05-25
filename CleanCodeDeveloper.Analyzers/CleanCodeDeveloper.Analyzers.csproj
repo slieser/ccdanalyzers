@@ -13,8 +13,8 @@
     <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
     <PackageIcon>Mini Logo.jpg</PackageIcon>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    <InformationalVersion>0.6.0-31</InformationalVersion>
-    <Version>0.6.0-31</Version>
+    <InformationalVersion>0.6.0-34</InformationalVersion>
+    <Version>0.6.0-34</Version>
     <Nullable>enable</Nullable>
   </PropertyGroup>
   <PropertyGroup>
