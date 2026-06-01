@@ -18,6 +18,7 @@ namespace CleanCodeDeveloper.Analyzers
         private const string Description = "Integration Operation Segregation Principle (IOSP) is violated.";
         private const string MinMetricOptionKey = "dotnet_diagnostic.CCD0001.min_metric";
         private const string AdditionalNamespacesOptionKey = "dotnet_diagnostic.CCD0001.additional_namespaces";
+        private const string ExcludeTestsOptionKey = "dotnet_diagnostic.CCD0001.exclude_tests";
         private const string NamespacesFileName = "namespaces.txt";
         private const int DefaultMinMetric = 1;
         private const string TasksNamespace = "Tasks";
@@ -33,6 +34,30 @@ namespace CleanCodeDeveloper.Analyzers
                 isEnabledByDefault: true,
                 description: Description,
                 helpLinkUri: "https://ccd-akademie.de/iosp-analyzer");
+
+        // Attributes (by full name) that mark a method as a test or a test lifecycle method in
+        // NUnit, MSTest and xUnit. Matched per method, never per containing type.
+        private static readonly ImmutableHashSet<string> TestAttributeNames = ImmutableHashSet.Create(
+            StringComparer.Ordinal,
+            // NUnit
+            "NUnit.Framework.TestAttribute",
+            "NUnit.Framework.TestCaseAttribute",
+            "NUnit.Framework.TestCaseSourceAttribute",
+            "NUnit.Framework.TheoryAttribute",
+            "NUnit.Framework.SetUpAttribute",
+            "NUnit.Framework.TearDownAttribute",
+            "NUnit.Framework.OneTimeSetUpAttribute",
+            "NUnit.Framework.OneTimeTearDownAttribute",
+            // MSTest
+            "Microsoft.VisualStudio.TestTools.UnitTesting.TestMethodAttribute",
+            "Microsoft.VisualStudio.TestTools.UnitTesting.DataTestMethodAttribute",
+            "Microsoft.VisualStudio.TestTools.UnitTesting.TestInitializeAttribute",
+            "Microsoft.VisualStudio.TestTools.UnitTesting.TestCleanupAttribute",
+            "Microsoft.VisualStudio.TestTools.UnitTesting.ClassInitializeAttribute",
+            "Microsoft.VisualStudio.TestTools.UnitTesting.ClassCleanupAttribute",
+            // xUnit
+            "Xunit.FactAttribute",
+            "Xunit.TheoryAttribute");
 
         public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => [Rule];
 
@@ -83,6 +108,9 @@ namespace CleanCodeDeveloper.Analyzers
         private static void CodeBlockAction(CodeBlockAnalysisContext context, ImmutableArray<string> namespacesToIgnore) {
             var method = ResolveOwningMethod(context.OwningSymbol);
             if (method == null) {
+                return;
+            }
+            if (GetExcludeTests(context) && IsTestMethod(method)) {
                 return;
             }
             if (IsInIgnoredNamespace(method.ContainingNamespace, namespacesToIgnore)) {
@@ -290,6 +318,23 @@ namespace CleanCodeDeveloper.Analyzers
         private static bool IsConfigureAwait(IMethodSymbol methodSymbol) =>
             string.Equals(methodSymbol.Name, "ConfigureAwait", StringComparison.Ordinal)
             && string.Equals(methodSymbol.ContainingNamespace?.Name, TasksNamespace, StringComparison.Ordinal);
+
+        private static bool GetExcludeTests(CodeBlockAnalysisContext context) {
+            var options = context.Options.AnalyzerConfigOptionsProvider.GetOptions(context.SemanticModel.SyntaxTree);
+            return options.TryGetValue(ExcludeTestsOptionKey, out var value)
+                   && bool.TryParse(value, out var excludeTests)
+                   && excludeTests;
+        }
+
+        private static bool IsTestMethod(IMethodSymbol method) {
+            foreach (var attribute in method.GetAttributes()) {
+                var attributeName = attribute.AttributeClass?.ToDisplayString();
+                if (attributeName != null && TestAttributeNames.Contains(attributeName)) {
+                    return true;
+                }
+            }
+            return false;
+        }
 
         private static int GetMinMetric(CodeBlockAnalysisContext context) {
             var options = context.Options.AnalyzerConfigOptionsProvider.GetOptions(context.SemanticModel.SyntaxTree);

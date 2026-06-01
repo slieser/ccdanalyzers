@@ -2,3 +2,4 @@ root = true
 [*.cs]
 dotnet_diagnostic.CCD0001.Namespaces = "NUnit.Framework"
 dotnet_diagnostic.CCD0001.min_metric = 2
+dotnet_diagnostic.CCD0001.exclude_tests = true
