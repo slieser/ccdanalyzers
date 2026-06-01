@@ -9,6 +9,7 @@ internal static class TestHelpers
     public const string DefaultNamespacesFile = """
         # Default namespaces ignored by CCD0001 (IOSP).
         NUnit.Framework
+        Moq
         VerifyNUnit
         Microsoft.Extensions.Logging
         """;

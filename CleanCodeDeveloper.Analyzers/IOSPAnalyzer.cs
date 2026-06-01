@@ -158,6 +158,9 @@ namespace CleanCodeDeveloper.Analyzers
                 if (IsInIgnoredNamespace(methodSymbol.ContainingNamespace, namespacesToIgnore)) {
                     continue;
                 }
+                if (IsInsideIgnoredCallSpecification(invocation, context, namespacesToIgnore)) {
+                    continue;
+                }
                 if (methodSymbol.IsVirtual && methodSymbol.Name == owningMethod.Name) {
                     // base.X() call inside an override is neither integration nor operation
                     continue;
@@ -184,6 +187,44 @@ namespace CleanCodeDeveloper.Analyzers
                 }
             }
         }
+
+        // A call that appears inside a lambda argument of an ignored-namespace call (e.g. the
+        // expression in Moq's mock.Setup(x => x.Foo())) describes that call rather than executing
+        // it, so it must not be classified once the framework's namespace is ignored.
+        private static bool IsInsideIgnoredCallSpecification(
+            InvocationExpressionSyntax invocation,
+            CodeBlockAnalysisContext context,
+            ImmutableArray<string> namespacesToIgnore) {
+            for (var node = invocation.Parent; node != null; node = node.Parent) {
+                if (IsFunctionDeclaration(node)) {
+                    return false;
+                }
+                if (node is AnonymousFunctionExpressionSyntax lambda
+                    && EnclosingInvocationIsIgnored(lambda, context, namespacesToIgnore)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        private static bool EnclosingInvocationIsIgnored(
+            AnonymousFunctionExpressionSyntax lambda,
+            CodeBlockAnalysisContext context,
+            ImmutableArray<string> namespacesToIgnore) {
+            for (var node = lambda.Parent; node != null; node = node.Parent) {
+                if (IsFunctionDeclaration(node)) {
+                    return false;
+                }
+                if (node is InvocationExpressionSyntax invocation) {
+                    return context.SemanticModel.GetSymbolInfo(invocation, context.CancellationToken).Symbol is IMethodSymbol method
+                           && IsInIgnoredNamespace(method.ContainingNamespace, namespacesToIgnore);
+                }
+            }
+            return false;
+        }
+
+        private static bool IsFunctionDeclaration(SyntaxNode node) =>
+            node is BaseMethodDeclarationSyntax or LocalFunctionStatementSyntax or AccessorDeclarationSyntax;
 
         private static string MethodKey(IMethodSymbol m) {
             var typeName = m.ContainingType?.ToDisplayString() ?? "?";

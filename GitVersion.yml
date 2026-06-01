@@ -1,6 +1,6 @@
 assembly-informational-format: '{SemVer}'
 increment: Patch
-next-version: 0.6.1
+next-version: 0.7.0
 branches:
   main:
     increment: Patch

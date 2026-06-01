@@ -2,5 +2,6 @@
 # One namespace per line. Lines starting with # are comments. Blank lines are ignored.
 # Extend the list via dotnet_diagnostic.CCD0001.additional_namespaces in .editorconfig (comma separated).
 NUnit.Framework
+Moq
 VerifyNUnit
 Microsoft.Extensions.Logging
